@@ -1,4 +1,4 @@
-package com.aidar.foundations.hashmap;
+package com.aidar.foundations.collections;
 
 import org.junit.jupiter.api.Test;
 
