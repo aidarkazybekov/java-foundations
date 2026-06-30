@@ -1,28 +1,24 @@
-name: Deploy docs to GitHub Pages
+name: Regenerate docs manifest
+
+# Keeps docs/content.json in sync with the files in docs/concepts and
+# docs/visualizations, so contributed items appear on the site automatically.
+# GitHub Pages serves docs/ directly (Settings -> Pages -> Deploy from a branch -> /docs).
 
 on:
   push:
     branches: [main]
     paths:
-      - 'docs/**'
-      - '.github/workflows/deploy-pages.yml'
+      - 'docs/concepts/**'
+      - 'docs/visualizations/**'
+      - 'docs/gen-manifest.mjs'
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
+  contents: write
 
 jobs:
-  deploy:
+  manifest:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,17 +28,17 @@ jobs:
         with:
           node-version: 22
 
-      - name: Generate content manifest (auto-discover concepts & visualizations)
+      - name: Regenerate content.json
         run: node docs/gen-manifest.mjs
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload docs as Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Commit if changed
+        run: |
+          if ! git diff --quiet -- docs/content.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add docs/content.json
+            git commit -m "chore: regenerate docs/content.json [skip ci]"
+            git push
+          else
+            echo "content.json already up to date"
+          fi
