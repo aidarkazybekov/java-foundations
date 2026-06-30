@@ -1,48 +1,84 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Race condition — java-foundations</title>
-<script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('jf-lang')||((navigator.language||'en').slice(0,2)==='ru'?'ru':'en');document.documentElement.setAttribute('data-lang',l);}catch(e){}})();</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="topbar">
   <a class="brand" href="../index.html"><span class="dot"></span>← java-foundations</a>
-  <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
+  <div style="display:flex; gap:8px;">
+    <button id="lang-toggle" class="theme-toggle" onclick="toggleLang()" aria-label="switch language" style="width:auto; padding:0 12px; font-size:13px; font-weight:600;">RU</button>
+    <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
+  </div>
 </div>
-<h1>Race condition (count++ под потоками)</h1>
-<p class="lead">Два потока делают <code>count++</code> = read → add → write. Ты управляешь порядком шагов. Чередуй (A read, B read, A write, B write) → потеряешь инкремент; прогони A целиком, потом B → будет верно.</p>
+<h1 data-i18n="title">Race condition (count++ across threads)</h1>
+<p class="lead" data-i18n="lead">Two threads run <code>count++</code> = read → add → write. You control the order of the steps. Interleave them (A read, B read, A write, B write) → you lose an increment; run A fully, then B → it comes out right.</p>
 
 <div style="display:flex; align-items:baseline; gap:10px; margin:1rem 0;">
-  <span style="font-size:14px; color:var(--color-text-secondary);">общий <code>count</code> =</span>
+  <span style="font-size:14px; color:var(--color-text-secondary);" data-i18n="sharedLabel">shared <code>count</code> =</span>
   <span id="rc-count" style="font-size:32px; font-weight:500;">5</span>
 </div>
 
 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:1rem 0;">
   <div style="border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-lg); padding:1rem;">
-    <div style="font-weight:500; color:var(--color-text-info); margin-bottom:8px;">Поток A</div>
-    <div style="font-size:13px; color:var(--color-text-secondary);">его регистр</div>
+    <div style="font-weight:500; color:var(--color-text-info); margin-bottom:8px;" data-i18n="threadA">Thread A</div>
+    <div style="font-size:13px; color:var(--color-text-secondary);" data-i18n="regLabel">its register</div>
     <div id="rc-A-reg" style="font-size:22px; font-weight:500; margin-bottom:8px;">—</div>
     <div id="rc-A-next" style="font-size:13px; color:var(--color-text-tertiary); min-height:18px;">next: read</div>
-    <button onclick="rcStep('A')" id="rc-A-btn" style="margin-top:10px; width:100%;">▶ шаг A</button>
+    <button onclick="rcStep('A')" id="rc-A-btn" style="margin-top:10px; width:100%;" data-i18n="stepA">▶ step A</button>
   </div>
   <div style="border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-lg); padding:1rem;">
-    <div style="font-weight:500; color:var(--color-text-warning); margin-bottom:8px;">Поток B</div>
-    <div style="font-size:13px; color:var(--color-text-secondary);">его регистр</div>
+    <div style="font-weight:500; color:var(--color-text-warning); margin-bottom:8px;" data-i18n="threadB">Thread B</div>
+    <div style="font-size:13px; color:var(--color-text-secondary);" data-i18n="regLabel">its register</div>
     <div id="rc-B-reg" style="font-size:22px; font-weight:500; margin-bottom:8px;">—</div>
     <div id="rc-B-next" style="font-size:13px; color:var(--color-text-tertiary); min-height:18px;">next: read</div>
-    <button onclick="rcStep('B')" id="rc-B-btn" style="margin-top:10px; width:100%;">▶ шаг B</button>
+    <button onclick="rcStep('B')" id="rc-B-btn" style="margin-top:10px; width:100%;" data-i18n="stepB">▶ step B</button>
   </div>
 </div>
 
-<div style="margin:1rem 0;"><button onclick="rcReset()">reset</button></div>
+<div style="margin:1rem 0;"><button onclick="rcReset()" data-i18n="btnReset">reset</button></div>
 
 <div id="rc-log" style="font-size:13px; color:var(--color-text-secondary); line-height:1.8; font-family:var(--font-mono);"></div>
 <div id="rc-verdict" style="font-size:15px; font-weight:500; margin-top:10px; min-height:24px;"></div>
 
 <script>
+window.I18N = {
+  en: { title: "Race condition (count++ across threads)",
+        lead: 'Two threads run <code>count++</code> = read → add → write. You control the order of the steps. Interleave them (A read, B read, A write, B write) → you lose an increment; run A fully, then B → it comes out right.',
+        sharedLabel: 'shared <code>count</code> =',
+        threadA: "Thread A", threadB: "Thread B", regLabel: "its register",
+        stepA: "▶ step A", stepB: "▶ step B", btnReset: "reset" },
+  ru: { title: "Race condition (count++ под потоками)",
+        lead: 'Два потока делают <code>count++</code> = read → add → write. Ты управляешь порядком шагов. Чередуй (A read, B read, A write, B write) → потеряешь инкремент; прогони A целиком, потом B → будет верно.',
+        sharedLabel: 'общий <code>count</code> =',
+        threadA: "Поток A", threadB: "Поток B", regLabel: "его регистр",
+        stepA: "▶ шаг A", stepB: "▶ шаг B", btnReset: "reset" }
+};
+var MSG = {
+  en: {
+    label: ['read: reg = count', 'add: reg = reg + 1', 'write: count = reg', 'done'],
+    logRead: function (name,reg){ return name + ': read count → reg = ' + reg; },
+    logAdd: function (name,reg){ return name + ': add → reg = ' + reg; },
+    logWrite: function (name,reg){ return name + ': write count = ' + reg; },
+    ok: function (count){ return '✓ count = ' + count + ' — correct (both increments survived).'; },
+    lost: function (count,expected){ return '✗ count = ' + count + ', expected ' + expected + ' — lost update! One increment vanished.'; }
+  },
+  ru: {
+    label: ['read: reg = count', 'add: reg = reg + 1', 'write: count = reg', 'done'],
+    logRead: function (name,reg){ return name + ': read count → reg = ' + reg; },
+    logAdd: function (name,reg){ return name + ': add → reg = ' + reg; },
+    logWrite: function (name,reg){ return name + ': write count = ' + reg; },
+    ok: function (count){ return '✓ count = ' + count + ' — верно (оба инкремента сохранились).'; },
+    lost: function (count,expected){ return '✗ count = ' + count + ', ожидалось ' + expected + ' — lost update! Один инкремент исчез.'; }
+  }
+};
+function L(){ return document.documentElement.getAttribute('data-lang') || 'en'; }
+function T(){ return MSG[L()]; }
+
 const RC_START = 5;
 let rcCount, rcT, rcLog;
 
@@ -53,41 +89,42 @@ function rcReset() {
   rcRender();
 }
 
-const RC_LABEL = ['read: reg = count', 'add: reg = reg + 1', 'write: count = reg', 'done'];
-
 function rcStep(name) {
   const t = rcT[name];
-  if (t.pc === 0) { t.reg = rcCount; rcLog.push(name + ': read count → reg = ' + t.reg); }
-  else if (t.pc === 1) { t.reg = t.reg + 1; rcLog.push(name + ': add → reg = ' + t.reg); }
-  else if (t.pc === 2) { rcCount = t.reg; rcLog.push(name + ': write count = ' + t.reg); }
+  if (t.pc === 0) { t.reg = rcCount; rcLog.push({ k: 'logRead', name: name, reg: t.reg }); }
+  else if (t.pc === 1) { t.reg = t.reg + 1; rcLog.push({ k: 'logAdd', name: name, reg: t.reg }); }
+  else if (t.pc === 2) { rcCount = t.reg; rcLog.push({ k: 'logWrite', name: name, reg: t.reg }); }
   if (t.pc < 3) t.pc++;
   rcRender();
 }
 
 function rcRender() {
+  const t = T();
   document.getElementById('rc-count').textContent = rcCount;
   for (const name of ['A', 'B']) {
-    const t = rcT[name];
-    document.getElementById('rc-' + name + '-reg').textContent = t.reg === null ? '—' : t.reg;
-    document.getElementById('rc-' + name + '-next').textContent = 'next: ' + RC_LABEL[t.pc];
-    document.getElementById('rc-' + name + '-btn').disabled = t.pc === 3;
+    const th = rcT[name];
+    document.getElementById('rc-' + name + '-reg').textContent = th.reg === null ? '—' : th.reg;
+    document.getElementById('rc-' + name + '-next').textContent = 'next: ' + t.label[th.pc];
+    document.getElementById('rc-' + name + '-btn').disabled = th.pc === 3;
   }
-  document.getElementById('rc-log').innerHTML = rcLog.map(l => '<div>' + l + '</div>').join('');
+  document.getElementById('rc-log').innerHTML = rcLog.map(e => '<div>' + t[e.k](e.name, e.reg) + '</div>').join('');
   const v = document.getElementById('rc-verdict');
   if (rcT.A.pc === 3 && rcT.B.pc === 3) {
     const expected = RC_START + 2;
     if (rcCount === expected) {
-      v.textContent = '✓ count = ' + rcCount + ' — верно (оба инкремента сохранились).';
+      v.textContent = t.ok(rcCount);
       v.style.color = 'var(--color-text-success)';
     } else {
-      v.textContent = '✗ count = ' + rcCount + ', ожидалось ' + expected + ' — lost update! Один инкремент исчез.';
+      v.textContent = t.lost(rcCount, expected);
       v.style.color = 'var(--color-text-danger)';
     }
   } else { v.textContent = ''; }
 }
 
+window.onLangChange = rcRender;
 rcReset();
 </script>
 <script src="../theme.js"></script>
+<script src="../lang.js"></script>
 </body>
 </html>

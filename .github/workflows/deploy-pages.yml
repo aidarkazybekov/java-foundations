@@ -30,13 +30,15 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Generate content manifest (auto-discover concepts & visualizations)
         run: node docs/gen-manifest.mjs
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Upload docs as Pages artifact
         uses: actions/upload-pages-artifact@v3

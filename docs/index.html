@@ -10,6 +10,8 @@
 </head>
 <body>
 
+<div class="accent-bar"></div>
+
 <div class="topbar">
   <span class="brand"><span class="dot"></span>java-foundations</span>
   <div style="display:flex; gap:8px;">
@@ -19,8 +21,9 @@
 </div>
 
 <section class="hero">
-  <h1 data-i18n="heroTitle">Core Java, from scratch.</h1>
-  <p class="tagline" data-i18n="heroTagline">Data structures, concurrency primitives, and a DI container — rebuilt by hand, test-driven, to prove how the abstractions actually work underneath.</p>
+  <p class="eyebrow" data-i18n="eyebrow">// Java, from first principles</p>
+  <h1 data-i18n="heroTitle">Core Java, rebuilt by hand.</h1>
+  <p class="tagline" data-i18n="heroTagline">Data structures, concurrency primitives, and a DI container — built from scratch and test-driven, to prove how the abstractions actually work underneath.</p>
   <div class="badges">
     <span class="badge accent" data-i18n="badgeComponents">11 components</span>
     <span class="badge" data-i18n="badgeTests">104 tests green</span>
@@ -28,8 +31,10 @@
     <span class="badge">TDD-first</span>
     <span class="badge" data-i18n="badgeDeps">zero runtime deps</span>
   </div>
+  <div class="mono-line"><span>$ mvn test</span><span class="ok" data-i18n="monoPass">→ 104 passing</span></div>
 </section>
 
+<p class="kicker" data-i18n="kOverview">Overview</p>
 <h2 data-i18n="whatTitle">What this is</h2>
 <p class="lead" data-i18n="whatLead">Not a library to use — a proof of understanding. The set builds on itself: the LRU cache reuses the hand-written HashMap and linked list, the thread pool runs on the blocking queue, and the DI container caches its singletons in the HashMap.</p>
 
@@ -59,43 +64,67 @@
   </div>
 </div>
 
+<p class="kicker" data-i18n="kPlay">Play</p>
 <h2 data-i18n="vizTitle">Interactive visualizations</h2>
 <p class="lead" data-i18n="vizLead">Open and play — each explains a structure step by step.</p>
 <div class="grid" id="viz-grid"></div>
 
+<p class="kicker" data-i18n="kLearn">Learn</p>
 <h2 data-i18n="conTitle">Concept deep-dives</h2>
 <p class="lead" data-i18n="conLead">How each piece works internally, with interview angles.</p>
 <div class="grid" id="concept-grid"></div>
 
-<footer>
-  <span data-i18n="footerBuilt">Built by Aidar</span> ·
-  <a href="https://github.com/aidarkazybekov/java-foundations">GitHub</a> ·
-  <a href="https://github.com/aidarkazybekov/java-foundations/blob/main/CONTRIBUTING.md" data-i18n="footerContribute">contribute a concept or visualization</a>
+<footer class="site-footer">
+  <div>
+    <span class="fbrand"><span class="dot"></span>java-foundations</span>
+    <p class="ftag" data-i18n="ftag">Core Java building blocks, built from scratch and explained — with interactive visualizations and deep-dives.</p>
+  </div>
+  <div>
+    <h4 data-i18n="fProject">Project</h4>
+    <a class="flink" href="https://github.com/aidarkazybekov/java-foundations">GitHub ↗</a>
+    <a class="flink" href="https://github.com/aidarkazybekov/java-foundations/blob/main/README.md">README ↗</a>
+    <a class="flink" href="https://github.com/aidarkazybekov/java-foundations/blob/main/CONTRIBUTING.md" data-i18n="fContribute">Contribute ↗</a>
+  </div>
+  <div>
+    <h4 data-i18n="fExplore">Explore</h4>
+    <a class="flink" href="visualizations/ring-buffer.html" data-i18n="fViz">Visualizations</a>
+    <a class="flink" href="concept.html?doc=hashmap-internals" data-i18n="fConcepts">Concepts</a>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 Aidar Kazybekov</span>
+    <span data-i18n="fMade">Open source · contributions welcome</span>
+  </div>
 </footer>
 
 <script>
 window.I18N = {
   en: {
-    heroTitle: "Core Java, from scratch.",
-    heroTagline: "Data structures, concurrency primitives, and a DI container — rebuilt by hand, test-driven, to prove how the abstractions actually work underneath.",
-    badgeComponents: "11 components", badgeTests: "104 tests green", badgeDeps: "zero runtime deps",
-    whatTitle: "What this is",
+    eyebrow: "// Java, from first principles",
+    heroTitle: "Core Java, rebuilt by hand.",
+    heroTagline: "Data structures, concurrency primitives, and a DI container — built from scratch and test-driven, to prove how the abstractions actually work underneath.",
+    badgeComponents: "11 components", badgeTests: "104 tests green", badgeDeps: "zero runtime deps", monoPass: "→ 104 passing",
+    kOverview: "Overview", whatTitle: "What this is",
     whatLead: "Not a library to use — a proof of understanding. The set builds on itself: the LRU cache reuses the hand-written HashMap and linked list, the thread pool runs on the blocking queue, and the DI container caches its singletons in the HashMap.",
     colData: "Data structures", colConc: "Concurrency", colFw: "Framework",
-    vizTitle: "Interactive visualizations", vizLead: "Open and play — each explains a structure step by step.",
-    conTitle: "Concept deep-dives", conLead: "How each piece works internally, with interview angles.",
-    footerBuilt: "Built by Aidar", footerContribute: "contribute a concept or visualization"
+    kPlay: "Play", vizTitle: "Interactive visualizations", vizLead: "Open and play — each explains a structure step by step.",
+    kLearn: "Learn", conTitle: "Concept deep-dives", conLead: "How each piece works internally, with interview angles.",
+    ftag: "Core Java building blocks, built from scratch and explained — with interactive visualizations and deep-dives.",
+    fProject: "Project", fContribute: "Contribute ↗", fExplore: "Explore", fViz: "Visualizations", fConcepts: "Concepts",
+    fMade: "Open source · contributions welcome"
   },
   ru: {
-    heroTitle: "Java с нуля.",
-    heroTagline: "Структуры данных, примитивы конкурентности и DI-контейнер — собраны руками, через тесты, чтобы понять, как абстракции работают изнутри.",
-    badgeComponents: "11 компонентов", badgeTests: "104 теста зелёные", badgeDeps: "без зависимостей",
-    whatTitle: "Что это",
+    eyebrow: "// Java с азов",
+    heroTitle: "Core Java, собранный руками.",
+    heroTagline: "Структуры данных, примитивы конкурентности и DI-контейнер — с нуля и через тесты, чтобы понять, как абстракции работают изнутри.",
+    badgeComponents: "11 компонентов", badgeTests: "104 теста зелёные", badgeDeps: "без зависимостей", monoPass: "→ 104 проходят",
+    kOverview: "Обзор", whatTitle: "Что это",
     whatLead: "Не библиотека для использования — доказательство понимания. Набор опирается на себя: LRU-кэш использует написанные руками HashMap и связный список, пул потоков работает на блокирующей очереди, а DI-контейнер кэширует синглтоны в HashMap.",
     colData: "Структуры данных", colConc: "Конкурентность", colFw: "Фреймворк",
-    vizTitle: "Интерактивные визуализации", vizLead: "Открой и поиграй — каждая объясняет структуру по шагам.",
-    conTitle: "Разбор концептов", conLead: "Как каждая часть устроена изнутри, с углом для собеседования.",
-    footerBuilt: "Сделал Айдар", footerContribute: "добавить концепт или визуализацию"
+    kPlay: "Поиграть", vizTitle: "Интерактивные визуализации", vizLead: "Открой и поиграй — каждая объясняет структуру по шагам.",
+    kLearn: "Изучить", conTitle: "Разбор концептов", conLead: "Как каждая часть устроена изнутри, с углом для собеседования.",
+    ftag: "Базовые блоки Java, собранные с нуля и объяснённые — с интерактивными визуализациями и разборами.",
+    fProject: "Проект", fContribute: "Внести вклад ↗", fExplore: "Навигация", fViz: "Визуализации", fConcepts: "Концепты",
+    fMade: "Open source · вклад приветствуется"
   }
 };
 

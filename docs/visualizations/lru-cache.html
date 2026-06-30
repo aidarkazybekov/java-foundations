@@ -1,47 +1,87 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LRU cache — java-foundations</title>
-<script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('jf-lang')||((navigator.language||'en').slice(0,2)==='ru'?'ru':'en');document.documentElement.setAttribute('data-lang',l);}catch(e){}})();</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="topbar">
   <a class="brand" href="../index.html"><span class="dot"></span>← java-foundations</a>
-  <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
+  <div style="display:flex; gap:8px;">
+    <button id="lang-toggle" class="theme-toggle" onclick="toggleLang()" aria-label="switch language" style="width:auto; padding:0 12px; font-size:13px; font-weight:600;">RU</button>
+    <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
+  </div>
 </div>
-<h1>LRU-кэш (MyLRUCache)</h1>
-<p class="lead">Ёмкость 4. <code>put</code> кладёт в начало, <code>get</code> (клик по карточке) двигает в начало, при переполнении вылетает самый старый (хвост). 🟢 самый свежий · 🔴 рамка = кандидат на вылет.</p>
+<h1 data-i18n="title">LRU cache (MyLRUCache)</h1>
+<p class="lead" data-i18n="lead">Capacity 4. <code>put</code> inserts at the front, <code>get</code> (click a card) moves it to the front, and on overflow the oldest entry (the tail) is evicted. 🟢 most recently used · 🔴 border = eviction candidate.</p>
 
 <div style="display:flex; gap:8px; flex-wrap:wrap; margin:1rem 0; align-items:center;">
-  <button onclick="lruPut()">put new key</button>
-  <button onclick="lruReset()">reset</button>
-  <span style="font-size:13px; color:var(--color-text-secondary);">клик по карточке = <b>get</b> (двигает в начало)</span>
+  <button onclick="lruPut()" data-i18n="btnPut">put new key</button>
+  <button onclick="lruReset()" data-i18n="btnReset">reset</button>
+  <span style="font-size:13px; color:var(--color-text-secondary);" data-i18n="hint">click a card = <b>get</b> (moves it to the front)</span>
 </div>
 
 <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--color-text-tertiary); margin:.5rem 2px 4px;">
-  <span>← самый свежий (front)</span>
-  <span>самый старый (back / вылетит) →</span>
+  <span data-i18n="frontLabel">← most recent (front)</span>
+  <span data-i18n="backLabel">oldest (back / evicted) →</span>
 </div>
 <div id="lru-list" style="display:flex; gap:10px; flex-wrap:wrap; margin:.25rem 0 1rem; min-height:64px;"></div>
 
 <div id="lru-msg" style="font-size:14px; color:var(--color-text-secondary); line-height:1.7;"></div>
 
 <script>
+window.I18N = {
+  en: { title: "LRU cache (MyLRUCache)",
+        lead: 'Capacity 4. <code>put</code> inserts at the front, <code>get</code> (click a card) moves it to the front, and on overflow the oldest entry (the tail) is evicted. 🟢 most recently used · 🔴 border = eviction candidate.',
+        btnPut: "put new key", btnReset: "reset",
+        hint: 'click a card = <b>get</b> (moves it to the front)',
+        frontLabel: "← most recent (front)", backLabel: "oldest (back / evicted) →" },
+  ru: { title: "LRU-кэш (MyLRUCache)",
+        lead: 'Ёмкость 4. <code>put</code> кладёт в начало, <code>get</code> (клик по карточке) двигает в начало, при переполнении вылетает самый старый (хвост). 🟢 самый свежий · 🔴 рамка = кандидат на вылет.',
+        btnPut: "put new key", btnReset: "reset",
+        hint: 'клик по карточке = <b>get</b> (двигает в начало)',
+        frontLabel: "← самый свежий (front)", backLabel: "самый старый (back / вылетит) →" }
+};
+var MSG = {
+  en: {
+    empty: "Empty cache. Add some keys, then click one — it jumps to the front.",
+    emptyList: "empty",
+    miss: function (key){ return 'get(' + key + ') = miss.'; },
+    hit: function (key,val){ return 'get(' + key + ') = ' + val + ' (hit). ' + key + ' to the front — now the most recent.'; },
+    put: function (key,val,evicted){ return 'put(' + key + ', ' + val + '): inserted at the front.'
+      + (evicted ? '  Cache was full → evicted ' + evicted + ' (the oldest entry).' : ''); },
+    reset: "Reset."
+  },
+  ru: {
+    empty: "Пустой кэш. Положи ключи, потом кликни один — он прыгнет в начало.",
+    emptyList: "пусто",
+    miss: function (key){ return 'get(' + key + ') = промах.'; },
+    hit: function (key,val){ return 'get(' + key + ') = ' + val + ' (попадание). ' + key + ' в начало — теперь самый свежий.'; },
+    put: function (key,val,evicted){ return 'put(' + key + ', ' + val + '): добавил в начало.'
+      + (evicted ? '  Кэш был полон → выселил ' + evicted + ' (он был самым старым).' : ''); },
+    reset: "Сброс."
+  }
+};
+function L(){ return document.documentElement.getAttribute('data-lang') || 'en'; }
+function T(){ return MSG[L()]; }
+
 const LRU_CAP = 4;
 let lruList = [];
 let lruNext = 0;
-let lruMsg = 'Пустой кэш. Положи ключи, потом кликни один — он прыгнет в начало.';
+let lruMsgKey = { k: 'empty' };
 const LRU_KEYS = ['A','B','C','D','E','F','G','H'];
+
+function lruSetMsg(k, val){ lruMsgKey = { k: k, val: val }; }
 
 function lruGet(key) {
   const i = lruList.findIndex(n => n.key === key);
-  if (i === -1) { lruMsg = 'get(' + key + ') = промах.'; lruRender(); return; }
+  if (i === -1) { lruSetMsg('miss', [key]); lruRender(); return; }
   const node = lruList.splice(i, 1)[0];
   lruList.unshift(node);
-  lruMsg = 'get(' + key + ') = ' + node.val + ' (попадание). ' + key + ' в начало — теперь самый свежий.';
+  lruSetMsg('hit', [key, node.val]);
   lruRender();
 }
 
@@ -52,18 +92,18 @@ function lruPut() {
   let evicted = null;
   if (lruList.length >= LRU_CAP) evicted = lruList.pop();
   lruList.unshift({ key, val });
-  lruMsg = 'put(' + key + ', ' + val + '): добавил в начало.'
-    + (evicted ? '  Кэш был полон → выселил ' + evicted.key + ' (он был самым старым).' : '');
+  lruSetMsg('put', [key, val, evicted ? evicted.key : null]);
   lruRender();
 }
 
-function lruReset() { lruList = []; lruNext = 0; lruMsg = 'Сброс.'; lruRender(); }
+function lruReset() { lruList = []; lruNext = 0; lruSetMsg('reset'); lruRender(); }
 
 function lruRender() {
+  const t = T();
   const box = document.getElementById('lru-list');
   box.innerHTML = '';
   if (lruList.length === 0) {
-    box.innerHTML = '<div style="color:var(--color-text-tertiary); padding:1.25rem 0; font-size:14px">пусто</div>';
+    box.innerHTML = '<div style="color:var(--color-text-tertiary); padding:1.25rem 0; font-size:14px">' + t.emptyList + '</div>';
   }
   lruList.forEach((n, i) => {
     const isLru = i === lruList.length - 1 && lruList.length > 0;
@@ -85,11 +125,19 @@ function lruRender() {
       box.appendChild(arrow);
     }
   });
-  document.getElementById('lru-msg').textContent = lruMsg;
+  // resolve current message in the active language
+  var m = lruMsgKey, out = '';
+  if (m.k === 'miss') out = t.miss(m.val[0]);
+  else if (m.k === 'hit') out = t.hit(m.val[0], m.val[1]);
+  else if (m.k === 'put') out = t.put(m.val[0], m.val[1], m.val[2]);
+  else out = t[m.k];
+  document.getElementById('lru-msg').textContent = out;
 }
 
+window.onLangChange = lruRender;
 lruRender();
 </script>
 <script src="../theme.js"></script>
+<script src="../lang.js"></script>
 </body>
 </html>

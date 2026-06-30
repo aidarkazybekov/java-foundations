@@ -1,24 +1,28 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ring buffer — java-foundations</title>
-<script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('jf-lang')||((navigator.language||'en').slice(0,2)==='ru'?'ru':'en');document.documentElement.setAttribute('data-lang',l);}catch(e){}})();</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="topbar">
   <a class="brand" href="../index.html"><span class="dot"></span>← java-foundations</a>
-  <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
+  <div style="display:flex; gap:8px;">
+    <button id="lang-toggle" class="theme-toggle" onclick="toggleLang()" aria-label="switch language" style="width:auto; padding:0 12px; font-size:13px; font-weight:600;">RU</button>
+    <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
+  </div>
 </div>
-<h1>Кольцевой буфер (MyQueue)</h1>
-<p class="lead">FIFO-очередь на массиве: <code>enqueue</code> пишет в <code>(head+size)%cap</code>, <code>dequeue</code> двигает <code>head</code> с заворотом через край. Нажимай и смотри.</p>
+
+<h1 data-i18n="title">Ring buffer (MyQueue)</h1>
+<p class="lead" data-i18n="lead">A FIFO queue on an array: <code>enqueue</code> writes at <code>(head+size)%cap</code>, <code>dequeue</code> moves <code>head</code>, wrapping around the end. Press the buttons.</p>
 
 <div style="display:flex; gap:8px; flex-wrap:wrap; margin:1rem 0;">
-  <button onclick="rbEnqueue()">enqueue</button>
-  <button onclick="rbDequeue()">dequeue</button>
-  <button onclick="rbReset()">reset</button>
+  <button onclick="rbEnqueue()" data-i18n="btnEnq">enqueue</button>
+  <button onclick="rbDequeue()" data-i18n="btnDeq">dequeue</button>
+  <button onclick="rbReset()" data-i18n="btnReset">reset</button>
 </div>
 
 <div id="rb-cells" style="display:flex; gap:10px; margin:1.5rem 0; justify-content:flex-start;"></div>
@@ -41,9 +45,40 @@
 <div id="rb-status" style="font-size:14px; color:var(--color-text-secondary); line-height:1.7;"></div>
 
 <script>
+window.I18N = {
+  en: { title: "Ring buffer (MyQueue)", lead: 'A FIFO queue on an array: <code>enqueue</code> writes at <code>(head+size)%cap</code>, <code>dequeue</code> moves <code>head</code>, wrapping around the end. Press the buttons.',
+        btnEnq: "enqueue", btnDeq: "dequeue", btnReset: "reset" },
+  ru: { title: "Кольцевой буфер (MyQueue)", lead: 'FIFO-очередь на массиве: <code>enqueue</code> пишет в <code>(head+size)%cap</code>, <code>dequeue</code> двигает <code>head</code> с заворотом через край. Нажимай и смотри.',
+        btnEnq: "enqueue", btnDeq: "dequeue", btnReset: "reset" }
+};
+var MSG = {
+  en: {
+    headMark: "↓ head", writeMark: "↓ write", full: "FULL",
+    empty: "Empty. head = size = 0.",
+    fullMsg: "Full (size = 6). A real queue would resize here.",
+    enq: function (v,h,s,w){ return 'enqueue(' + v + '): wrote at (head+size)%6 = (' + h + '+' + s + ')%6 = ' + w + ', then size++.'; },
+    emptyDeq: "Empty (size = 0). Nothing to dequeue.",
+    deq: function (v,o,h,wr){ return 'dequeue() = ' + v + ': took index head = ' + o + ', then head = (head+1)%6 = ' + h + (wr ? '  ← wrapped to 0!' : '') + '.'; },
+    reset: "Reset. head = size = 0."
+  },
+  ru: {
+    headMark: "↓ head", writeMark: "↓ запись", full: "FULL",
+    empty: "Пусто. head = size = 0.",
+    fullMsg: "Полно (size = 6). Настоящая очередь сделала бы resize.",
+    enq: function (v,h,s,w){ return 'enqueue(' + v + '): записал в (head+size)%6 = (' + h + '+' + s + ')%6 = ' + w + ', потом size++.'; },
+    emptyDeq: "Пусто (size = 0). Забирать нечего.",
+    deq: function (v,o,h,wr){ return 'dequeue() = ' + v + ': взял индекс head = ' + o + ', потом head = (head+1)%6 = ' + h + (wr ? '  ← завернулся на 0!' : '') + '.'; },
+    reset: "Сброс. head = size = 0."
+  }
+};
+function L(){ return document.documentElement.getAttribute('data-lang') || 'en'; }
+function T(){ return MSG[L()]; }
+
 const RB_CAP = 6;
 let rbArr = new Array(RB_CAP).fill(null);
-let rbHead = 0, rbSize = 0, rbNext = 1, rbMsg = "Пусто. head = size = 0.";
+let rbHead = 0, rbSize = 0, rbNext = 1, rbMsgKey = { k: 'empty' };
+
+function rbSetMsg(k, val){ rbMsgKey = { k: k, val: val }; }
 
 function rbLogicalSet() {
   const s = new Set();
@@ -52,6 +87,7 @@ function rbLogicalSet() {
 }
 
 function rbRender() {
+  const t = T();
   const filled = rbLogicalSet();
   const writeIdx = (rbHead + rbSize) % RB_CAP;
   const full = rbSize === RB_CAP;
@@ -65,8 +101,8 @@ function rbRender() {
     wrap.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:6px;';
     const marker = document.createElement('div');
     marker.style.cssText = 'font-size:12px; font-weight:500; height:16px;';
-    if (isHead) { marker.textContent = '↓ head'; marker.style.color = 'var(--color-text-info)'; }
-    else if (isWrite) { marker.textContent = '↓ write'; marker.style.color = 'var(--color-text-success)'; }
+    if (isHead) { marker.textContent = t.headMark; marker.style.color = 'var(--color-text-info)'; }
+    else if (isWrite) { marker.textContent = t.writeMark; marker.style.color = 'var(--color-text-success)'; }
     const cell = document.createElement('div');
     cell.style.cssText = 'width:74px; height:64px; border-radius:var(--border-radius-md); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:500; border:0.5px solid var(--color-border-secondary);'
       + (isFilled ? 'background:var(--color-background-info); color:var(--color-text-info);' : 'background:var(--color-background-secondary); color:var(--color-text-tertiary);');
@@ -79,40 +115,47 @@ function rbRender() {
   }
   document.getElementById('rb-head').textContent = rbHead;
   document.getElementById('rb-size').textContent = rbSize;
-  document.getElementById('rb-write').textContent = full ? 'FULL' : writeIdx;
-  document.getElementById('rb-status').textContent = rbMsg;
+  document.getElementById('rb-write').textContent = full ? t.full : writeIdx;
+  // resolve current message in the active language
+  var m = rbMsgKey, out = '';
+  if (m.k === 'enq') out = t.enq.apply(null, m.val);
+  else if (m.k === 'deq') out = t.deq.apply(null, m.val);
+  else out = t[m.k];
+  document.getElementById('rb-status').textContent = out;
 }
 
 function rbEnqueue() {
-  if (rbSize === RB_CAP) { rbMsg = 'Полно (size = 6). Настоящая очередь сделала бы resize.'; rbRender(); return; }
+  if (rbSize === RB_CAP) { rbSetMsg('fullMsg'); rbRender(); return; }
   const w = (rbHead + rbSize) % RB_CAP;
   rbArr[w] = rbNext;
-  rbMsg = 'enqueue(' + rbNext + '): записал в (head+size)%6 = (' + rbHead + '+' + rbSize + ')%6 = ' + w + ', потом size++.';
+  rbSetMsg('enq', [rbNext, rbHead, rbSize, w]);
   rbNext++;
   rbSize++;
   rbRender();
 }
 
 function rbDequeue() {
-  if (rbSize === 0) { rbMsg = 'Пусто (size = 0). Забирать нечего.'; rbRender(); return; }
+  if (rbSize === 0) { rbSetMsg('emptyDeq'); rbRender(); return; }
   const v = rbArr[rbHead];
   rbArr[rbHead] = null;
   const old = rbHead;
   rbHead = (rbHead + 1) % RB_CAP;
   rbSize--;
-  rbMsg = 'dequeue() = ' + v + ': взял индекс head = ' + old + ', потом head = (head+1)%6 = ' + rbHead + (rbHead === 0 && old === RB_CAP - 1 ? '  ← завернулся на 0!' : '') + '.';
+  rbSetMsg('deq', [v, old, rbHead, (rbHead === 0 && old === RB_CAP - 1)]);
   rbRender();
 }
 
 function rbReset() {
   rbArr = new Array(RB_CAP).fill(null);
   rbHead = 0; rbSize = 0; rbNext = 1;
-  rbMsg = 'Сброс. head = size = 0.';
+  rbSetMsg('reset');
   rbRender();
 }
 
+window.onLangChange = rbRender;
 rbRender();
 </script>
-<script src="../theme.js"></script>
+<script src="theme.js"></script>
+<script src="lang.js"></script>
 </body>
 </html>

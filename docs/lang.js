@@ -9,7 +9,7 @@
     var dict = (window.I18N && window.I18N[lang]) || {};
     document.querySelectorAll('[data-i18n]').forEach(function (el) {
       var v = dict[el.getAttribute('data-i18n')];
-      if (v != null) el.textContent = v;
+      if (v != null) el.innerHTML = v;   // I18N strings are author-controlled; allow <code>/<b>
     });
     var b = document.getElementById('lang-toggle');
     if (b) b.textContent = lang === 'ru' ? 'EN' : 'RU';

@@ -1,38 +1,76 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Min-heap — java-foundations</title>
-<script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('jf-lang')||((navigator.language||'en').slice(0,2)==='ru'?'ru':'en');document.documentElement.setAttribute('data-lang',l);}catch(e){}})();</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="topbar">
   <a class="brand" href="../index.html"><span class="dot"></span>← java-foundations</a>
-  <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
+  <div style="display:flex; gap:8px;">
+    <button id="lang-toggle" class="theme-toggle" onclick="toggleLang()" aria-label="switch language" style="width:auto; padding:0 12px; font-size:13px; font-weight:600;">RU</button>
+    <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
+  </div>
 </div>
-<h1>Бинарная куча (MyPriorityQueue)</h1>
-<p class="lead">Полное дерево в массиве: родитель ≤ детей, минимум всегда в корне. <code>add</code> всплывает (sift-up), <code>poll</code> топит (sift-down). 🟢 корень = минимум, 🟡 узел, который только что двигался.</p>
+<h1 data-i18n="title">Binary heap (MyPriorityQueue)</h1>
+<p class="lead" data-i18n="lead">A complete tree stored in an array: parent ≤ children, the minimum is always at the root. <code>add</code> bubbles up (sift-up), <code>poll</code> sinks down (sift-down). 🟢 root = minimum, 🟡 the node that just moved.</p>
 
 <div style="display:flex; gap:8px; flex-wrap:wrap; margin:1rem 0;">
-  <button onclick="hpAdd()">add random</button>
-  <button onclick="hpPoll()">poll min</button>
-  <button onclick="hpReset()">reset</button>
+  <button onclick="hpAdd()" data-i18n="btnAdd">add random</button>
+  <button onclick="hpPoll()" data-i18n="btnPoll">poll min</button>
+  <button onclick="hpReset()" data-i18n="btnReset">reset</button>
 </div>
 
 <div id="hp-tree" style="width:100%; margin:.5rem 0;"></div>
 
-<div style="font-size:13px; color:var(--color-text-secondary); margin:.25rem 0;">массив (индекс под каждой ячейкой)</div>
+<div style="font-size:13px; color:var(--color-text-secondary); margin:.25rem 0;" data-i18n="arrLabel">array (index under each cell)</div>
 <div id="hp-arr" style="display:flex; gap:8px; flex-wrap:wrap; margin:.25rem 0 1rem;"></div>
 
 <div id="hp-msg" style="font-size:14px; color:var(--color-text-secondary); line-height:1.7;"></div>
 
 <script>
+window.I18N = {
+  en: { title: "Binary heap (MyPriorityQueue)",
+        lead: 'A complete tree stored in an array: parent ≤ children, the minimum is always at the root. <code>add</code> bubbles up (sift-up), <code>poll</code> sinks down (sift-down). 🟢 root = minimum, 🟡 the node that just moved.',
+        btnAdd: "add random", btnPoll: "poll min", btnReset: "reset",
+        arrLabel: "array (index under each cell)" },
+  ru: { title: "Бинарная куча (MyPriorityQueue)",
+        lead: 'Полное дерево в массиве: родитель ≤ детей, минимум всегда в корне. <code>add</code> всплывает (sift-up), <code>poll</code> топит (sift-down). 🟢 корень = минимум, 🟡 узел, который только что двигался.',
+        btnAdd: "add random", btnPoll: "poll min", btnReset: "reset",
+        arrLabel: "массив (индекс под каждой ячейкой)" }
+};
+var MSG = {
+  en: {
+    empty: "Empty heap. Add a few numbers — the minimum bubbles up to the root.",
+    capped: "Demo is capped at 15 nodes. Poll first.",
+    emptyPoll: "Empty. Nothing to poll.",
+    none: "none", emptyTree: "empty",
+    add: function (v,end,hi,root){ return 'add(' + v + '): placed at index ' + end + ', bubbled up to index ' + hi + '. Root (min) = ' + root + '.'; },
+    poll: function (min,newMin){ return 'poll() = ' + min + ': last element to the root, then sifted down. New min = ' + newMin + '.'; },
+    reset: "Reset."
+  },
+  ru: {
+    empty: "Пустая куча. Добавь несколько чисел — минимум всплывёт в корень.",
+    capped: "Демо ограничено 15 узлами. Сделай poll.",
+    emptyPoll: "Пусто. Забирать нечего.",
+    none: "нет", emptyTree: "пусто",
+    add: function (v,end,hi,root){ return 'add(' + v + '): положили в индекс ' + end + ', всплыл до индекса ' + hi + '. Корень (мин) = ' + root + '.'; },
+    poll: function (min,newMin){ return 'poll() = ' + min + ': последний элемент в корень, потом утопили вниз. Новый мин = ' + newMin + '.'; },
+    reset: "Сброс."
+  }
+};
+function L(){ return document.documentElement.getAttribute('data-lang') || 'en'; }
+function T(){ return MSG[L()]; }
+
 let hp = [];
 let hpHi = -1;
-let hpMsg = 'Пустая куча. Добавь несколько чисел — минимум всплывёт в корень.';
+let hpMsgKey = { k: 'empty' };
 const HP_W = 640;
+
+function hpSetMsg(k, val){ hpMsgKey = { k: k, val: val }; }
 
 function hpSwap(i, j) { const t = hp[i]; hp[i] = hp[j]; hp[j] = t; }
 
@@ -60,26 +98,26 @@ function hpSiftDown(i) {
 }
 
 function hpAdd() {
-  if (hp.length >= 15) { hpMsg = 'Демо ограничено 15 узлами. Сделай poll.'; hpRender(); return; }
+  if (hp.length >= 15) { hpSetMsg('capped'); hpRender(); return; }
   const v = 1 + Math.floor(Math.random() * 98);
   hp.push(v);
   const end = hp.length - 1;
   hpHi = hpSiftUp(end);
-  hpMsg = 'add(' + v + '): положили в индекс ' + end + ', всплыл до индекса ' + hpHi + '. Корень (мин) = ' + hp[0] + '.';
+  hpSetMsg('add', [v, end, hpHi, hp[0]]);
   hpRender();
 }
 
 function hpPoll() {
-  if (hp.length === 0) { hpMsg = 'Пусто. Забирать нечего.'; hpRender(); return; }
+  if (hp.length === 0) { hpSetMsg('emptyPoll'); hpRender(); return; }
   const min = hp[0];
   const last = hp.pop();
   if (hp.length > 0) { hp[0] = last; hpHi = hpSiftDown(0); }
   else hpHi = -1;
-  hpMsg = 'poll() = ' + min + ': последний элемент в корень, потом утопили вниз. Новый мин = ' + (hp.length ? hp[0] : 'нет') + '.';
+  hpSetMsg('poll', [min, hp.length ? hp[0] : null]);
   hpRender();
 }
 
-function hpReset() { hp = []; hpHi = -1; hpMsg = 'Сброс.'; hpRender(); }
+function hpReset() { hp = []; hpHi = -1; hpSetMsg('reset'); hpRender(); }
 
 function hpNodePos(i) {
   const d = Math.floor(Math.log2(i + 1));
@@ -89,6 +127,7 @@ function hpNodePos(i) {
 }
 
 function hpRender() {
+  const t = T();
   const n = hp.length;
   const maxD = n ? Math.floor(Math.log2(n)) : 0;
   const H = 60 + maxD * 70;
@@ -108,7 +147,7 @@ function hpRender() {
     svg += '<text x="' + p.x + '" y="' + (p.y - 26) + '" text-anchor="middle" style="fill:var(--color-text-tertiary); font-size:11px; font-family:var(--font-sans)">' + i + '</text>';
   }
   svg += '</svg>';
-  document.getElementById('hp-tree').innerHTML = n ? svg : '<div style="color:var(--color-text-tertiary); padding:1.5rem 0; font-size:14px">пусто</div>';
+  document.getElementById('hp-tree').innerHTML = n ? svg : '<div style="color:var(--color-text-tertiary); padding:1.5rem 0; font-size:14px">' + t.emptyTree + '</div>';
 
   const arr = document.getElementById('hp-arr');
   arr.innerHTML = '';
@@ -126,11 +165,18 @@ function hpRender() {
     wrap.appendChild(cell); wrap.appendChild(idx);
     arr.appendChild(wrap);
   }
-  document.getElementById('hp-msg').textContent = hpMsg;
+  // resolve current message in the active language
+  var m = hpMsgKey, out = '';
+  if (m.k === 'add') out = t.add.apply(null, m.val);
+  else if (m.k === 'poll') { var nm = m.val[1]; out = t.poll(m.val[0], nm === null ? t.none : nm); }
+  else out = t[m.k];
+  document.getElementById('hp-msg').textContent = out;
 }
 
+window.onLangChange = hpRender;
 hpRender();
 </script>
 <script src="../theme.js"></script>
+<script src="../lang.js"></script>
 </body>
 </html>

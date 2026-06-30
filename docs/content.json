@@ -54,29 +54,29 @@
   ],
   "visualizations": [
     {
+      "file": "min-heap.html",
+      "title": "Binary heap (MyPriorityQueue)",
+      "desc": "A complete tree stored in an array: parent ≤ children, the minimum is always at the root. add bubbles up (sift-up), poll sinks down (sift-down). 🟢…"
+    },
+    {
       "file": "lru-cache.html",
-      "title": "LRU-кэш (MyLRUCache)",
-      "desc": "Ёмкость 4. put кладёт в начало, get (клик по карточке) двигает в начало, при переполнении вылетает самый старый (хвост). 🟢 самый свежий · 🔴 рамка =…"
+      "title": "LRU cache (MyLRUCache)",
+      "desc": "Capacity 4. put inserts at the front, get (click a card) moves it to the front, and on overflow the oldest entry (the tail) is evicted. 🟢 most…"
     },
     {
       "file": "race-condition.html",
-      "title": "Race condition (count++ под потоками)",
-      "desc": "Два потока делают count++ = read → add → write. Ты управляешь порядком шагов. Чередуй (A read, B read, A write, B write) → потеряешь инкремент;…"
-    },
-    {
-      "file": "min-heap.html",
-      "title": "Бинарная куча (MyPriorityQueue)",
-      "desc": "Полное дерево в массиве: родитель ≤ детей, минимум всегда в корне. add всплывает (sift-up), poll топит (sift-down). 🟢 корень = минимум, 🟡 узел…"
+      "title": "Race condition (count++ across threads)",
+      "desc": "Two threads run count++ = read → add → write. You control the order of the steps. Interleave them (A read, B read, A write, B write) → you lose an…"
     },
     {
       "file": "ring-buffer.html",
-      "title": "Кольцевой буфер (MyQueue)",
-      "desc": "FIFO-очередь на массиве: enqueue пишет в (head+size)%cap, dequeue двигает head с заворотом через край. Нажимай и смотри."
+      "title": "Ring buffer (MyQueue)",
+      "desc": "A FIFO queue on an array: enqueue writes at (head+size)%cap, dequeue moves head, wrapping around the end. Press the buttons."
     },
     {
       "file": "thread-pool.html",
-      "title": "Пул потоков (MyThreadPool)",
-      "desc": "Задачи падают в очередь, 3 воркера сами их разбирают (когда задач нет — простаивают, как take() на пустой очереди). Жми submit."
+      "title": "Thread pool (MyThreadPool)",
+      "desc": "Tasks drop into a queue and 3 workers pick them up on their own (when there are no tasks they idle, like take() on an empty queue). Hit submit."
     }
   ]
 }
