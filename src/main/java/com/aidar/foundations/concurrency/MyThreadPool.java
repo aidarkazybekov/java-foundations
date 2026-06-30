@@ -26,7 +26,8 @@ public class MyThreadPool {
                 if(task == POISON) {
                     break;
                 }
-                task.run();
+                try { task.run(); }
+                catch (RuntimeException ex) { /* залогировать, но не убивать воркера */ }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
