@@ -73,4 +73,45 @@ public class MyHashMapTest {
         assertEquals(43, map.get(null));
         assertEquals(1, map.size()); // overwrite must not grow size
     }
+
+    @Test
+    void removeReturnsValueAndShrinks() {
+        MyHashMap<Integer, String> map = new MyHashMap<>();
+        map.put(1, "a");
+        assertEquals("a", map.remove(1));
+        assertEquals(0, map.size());
+        assertNull(map.get(1));
+    }
+
+    @Test
+    void removeHeadOfChain() {
+        MyHashMap<Integer, String> map = new MyHashMap<>();
+        map.put(1, "a");
+        map.put(17, "b");          // 1 and 17 collide (same bucket); 1 is chain head
+        assertEquals("a", map.remove(1));   // remove the head node
+        assertNull(map.get(1));
+        assertEquals("b", map.get(17));     // tail still reachable
+        assertEquals(1, map.size());
+    }
+
+    @Test
+    void removeFromMiddleOfChain() {
+        MyHashMap<Integer, String> map = new MyHashMap<>();
+        map.put(1, "a");
+        map.put(17, "b");
+        map.put(33, "c");          // chain: 1 -> 17 -> 33
+        assertEquals("b", map.remove(17));  // remove the middle node
+        assertEquals("a", map.get(1));
+        assertEquals("c", map.get(33));
+        assertNull(map.get(17));
+        assertEquals(2, map.size());
+    }
+
+    @Test
+    void removeAbsentReturnsNull() {
+        MyHashMap<Integer, String> map = new MyHashMap<>();
+        map.put(1, "a");
+        assertNull(map.remove(2));
+        assertEquals(1, map.size());
+    }
 }

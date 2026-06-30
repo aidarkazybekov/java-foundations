@@ -45,6 +45,27 @@ public class MyHashMap<K, V> {
         return size;
     }
 
+    public V remove(K key) {
+        int index = getIndex(key);
+        Node<K, V> current = table[index];
+        Node<K, V> prev = null;
+
+        while (current != null) {
+            if (keysEqual(current.key, key)) {
+                if (prev == null) {
+                    table[index] = current.next;
+                } else {
+                    prev.next = current.next;
+                }
+                size--;
+                return current.value;
+            }
+            prev = current;
+            current = current.next;
+        }
+        return null;
+    }
+
     /** Inserts the mapping. Returns true if a new node was added, false on overwrite. */
     private boolean putVal(K key, V value) {
         int index = getIndex(key);
