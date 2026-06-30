@@ -4,6 +4,8 @@ Core Java data structures and concurrency primitives **built from scratch**,
 test-driven. Not a library to use — a proof of understanding how the building
 blocks actually work, with the edge cases and complexity tradeoffs a senior cares about.
 
+**🌐 Live site (concepts + interactive visualizations): https://aidarkazybekov.github.io/java-foundations/**
+
 ## What this demonstrates
 
 - **Data structure internals** — hashing, collisions, resizing, amortized growth,
@@ -31,12 +33,18 @@ Concurrency — `src/main/java/com/aidar/foundations/concurrency/`:
 | Kata | Idea | Key concept |
 |------|------|-------------|
 | ✅ thread-safe counter | one counter, three implementations | race conditions, atomicity vs visibility, `synchronized` vs `AtomicLong`/CAS |
-| ⬜ producer–consumer | bounded blocking queue | `wait`/`notify` inter-thread signaling |
-| ⬜ thread pool | task queue + worker threads | |
-| ⬜ mini DI container | constructor injection by reflection | |
+| ✅ producer–consumer | bounded blocking queue over `MyQueue` | `wait`/`notify` signaling, poison-pill shutdown |
+| ✅ thread pool | worker threads draining a task queue | reuse over `new Thread`, graceful shutdown, exception isolation |
+
+Framework internals — `src/main/java/com/aidar/foundations/di/`:
+
+| Kata | Idea | Key concept |
+|------|------|-------------|
+| ✅ mini DI container | constructor injection by reflection | DI/IoC, singleton scope, recursive dependency resolution |
 
 Each type has a focused JUnit suite covering happy paths and edge cases
-(collisions, wrap-around, resize, empty/single-element, thread-safety). **93 tests green.**
+(collisions, wrap-around, resize, empty/single-element, thread-safety, no-loss under
+contention, dependency graphs). **104 tests green.**
 
 ## Requirements
 
@@ -48,3 +56,23 @@ Each type has a focused JUnit suite covering happy paths and edge cases
 export JAVA_HOME=$(/usr/libexec/java_home -v 21)
 mvn test
 ```
+
+## Documentation
+
+- 🌐 **[Live site](https://aidarkazybekov.github.io/java-foundations/)** — landing page with all
+  concepts and interactive visualizations (auto-deployed from `docs/` via GitHub Actions).
+- 📖 **[Concept deep-dives](docs/concepts/)** — how each structure works internally, with
+  interview angles (HashMap, heaps, ring buffers, locks/CAS, wait-notify, DI, ...).
+- 🎮 **[Interactive visualizations](docs/visualizations/)** — open in a browser and play:
+  [ring buffer](docs/visualizations/ring-buffer.html), [min-heap](docs/visualizations/min-heap.html),
+  [LRU cache](docs/visualizations/lru-cache.html),
+  [race condition](docs/visualizations/race-condition.html),
+  [thread pool](docs/visualizations/thread-pool.html).
+
+The site is bilingual (EN/RU toggle) with light/dark themes, and is **data-driven**: the
+landing page renders from `docs/content.json`, auto-generated from the files on each deploy.
+
+## Contributing
+
+New concepts and visualizations are welcome — **drop a file, open a PR, and it appears on the
+site automatically** (no manual index editing). See **[CONTRIBUTING.md](CONTRIBUTING.md)**.

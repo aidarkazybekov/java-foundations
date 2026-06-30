@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LRU cache — java-foundations</title>
+<script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="topbar">
+  <a class="brand" href="../index.html"><span class="dot"></span>← java-foundations</a>
+  <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
+</div>
+<h1>LRU-кэш (MyLRUCache)</h1>
+<p class="lead">Ёмкость 4. <code>put</code> кладёт в начало, <code>get</code> (клик по карточке) двигает в начало, при переполнении вылетает самый старый (хвост). 🟢 самый свежий · 🔴 рамка = кандидат на вылет.</p>
+
+<div style="display:flex; gap:8px; flex-wrap:wrap; margin:1rem 0; align-items:center;">
+  <button onclick="lruPut()">put new key</button>
+  <button onclick="lruReset()">reset</button>
+  <span style="font-size:13px; color:var(--color-text-secondary);">клик по карточке = <b>get</b> (двигает в начало)</span>
+</div>
+
+<div style="display:flex; justify-content:space-between; font-size:12px; color:var(--color-text-tertiary); margin:.5rem 2px 4px;">
+  <span>← самый свежий (front)</span>
+  <span>самый старый (back / вылетит) →</span>
+</div>
+<div id="lru-list" style="display:flex; gap:10px; flex-wrap:wrap; margin:.25rem 0 1rem; min-height:64px;"></div>
+
+<div id="lru-msg" style="font-size:14px; color:var(--color-text-secondary); line-height:1.7;"></div>
+
+<script>
+const LRU_CAP = 4;
+let lruList = [];
+let lruNext = 0;
+let lruMsg = 'Пустой кэш. Положи ключи, потом кликни один — он прыгнет в начало.';
+const LRU_KEYS = ['A','B','C','D','E','F','G','H'];
+
+function lruGet(key) {
+  const i = lruList.findIndex(n => n.key === key);
+  if (i === -1) { lruMsg = 'get(' + key + ') = промах.'; lruRender(); return; }
+  const node = lruList.splice(i, 1)[0];
+  lruList.unshift(node);
+  lruMsg = 'get(' + key + ') = ' + node.val + ' (попадание). ' + key + ' в начало — теперь самый свежий.';
+  lruRender();
+}
+
+function lruPut() {
+  const key = LRU_KEYS[lruNext % LRU_KEYS.length];
+  const val = (lruNext + 1) * 10;
+  lruNext++;
+  let evicted = null;
+  if (lruList.length >= LRU_CAP) evicted = lruList.pop();
+  lruList.unshift({ key, val });
+  lruMsg = 'put(' + key + ', ' + val + '): добавил в начало.'
+    + (evicted ? '  Кэш был полон → выселил ' + evicted.key + ' (он был самым старым).' : '');
+  lruRender();
+}
+
+function lruReset() { lruList = []; lruNext = 0; lruMsg = 'Сброс.'; lruRender(); }
+
+function lruRender() {
+  const box = document.getElementById('lru-list');
+  box.innerHTML = '';
+  if (lruList.length === 0) {
+    box.innerHTML = '<div style="color:var(--color-text-tertiary); padding:1.25rem 0; font-size:14px">пусто</div>';
+  }
+  lruList.forEach((n, i) => {
+    const isLru = i === lruList.length - 1 && lruList.length > 0;
+    const isMru = i === 0;
+    const card = document.createElement('button');
+    card.onclick = () => lruGet(n.key);
+    card.setAttribute('aria-label', 'get ' + n.key);
+    card.style.cssText = 'display:flex; flex-direction:column; align-items:center; justify-content:center; width:74px; height:62px; border-radius:var(--border-radius-md); cursor:pointer; padding:0;'
+      + 'border:' + (isLru ? '2px solid var(--color-border-danger)' : '0.5px solid var(--color-border-secondary)') + ';'
+      + 'background:' + (isMru ? 'var(--color-background-success)' : 'var(--color-background-info)') + ';'
+      + 'color:' + (isMru ? 'var(--color-text-success)' : 'var(--color-text-info)') + ';';
+    card.innerHTML = '<span style="font-size:18px; font-weight:500;">' + n.key + '</span>'
+      + '<span style="font-size:12px; opacity:.8;">val ' + n.val + '</span>';
+    box.appendChild(card);
+    if (i < lruList.length - 1) {
+      const arrow = document.createElement('div');
+      arrow.style.cssText = 'display:flex; align-items:center; color:var(--color-text-tertiary); font-size:14px;';
+      arrow.textContent = '⇄';
+      box.appendChild(arrow);
+    }
+  });
+  document.getElementById('lru-msg').textContent = lruMsg;
+}
+
+lruRender();
+</script>
+<script src="../theme.js"></script>
+</body>
+</html>

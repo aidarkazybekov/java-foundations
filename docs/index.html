@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>java-foundations — core Java & concurrency from scratch</title>
+<meta name="description" content="Core Java data structures, concurrency primitives, and a DI container built from scratch, test-driven. Interactive visualizations + concept deep-dives.">
+<script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('jf-lang')||((navigator.language||'en').slice(0,2)==='ru'?'ru':'en');document.documentElement.setAttribute('data-lang',l);}catch(e){}})();</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand"><span class="dot"></span>java-foundations</span>
+  <div style="display:flex; gap:8px;">
+    <button id="lang-toggle" class="theme-toggle" onclick="toggleLang()" aria-label="switch language" style="width:auto; padding:0 12px; font-size:13px; font-weight:600;">RU</button>
+    <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
+  </div>
+</div>
+
+<section class="hero">
+  <h1 data-i18n="heroTitle">Core Java, from scratch.</h1>
+  <p class="tagline" data-i18n="heroTagline">Data structures, concurrency primitives, and a DI container — rebuilt by hand, test-driven, to prove how the abstractions actually work underneath.</p>
+  <div class="badges">
+    <span class="badge accent" data-i18n="badgeComponents">11 components</span>
+    <span class="badge" data-i18n="badgeTests">104 tests green</span>
+    <span class="badge">Java 21</span>
+    <span class="badge">TDD-first</span>
+    <span class="badge" data-i18n="badgeDeps">zero runtime deps</span>
+  </div>
+</section>
+
+<h2 data-i18n="whatTitle">What this is</h2>
+<p class="lead" data-i18n="whatLead">Not a library to use — a proof of understanding. The set builds on itself: the LRU cache reuses the hand-written HashMap and linked list, the thread pool runs on the blocking queue, and the DI container caches its singletons in the HashMap.</p>
+
+<div class="cols">
+  <div class="col">
+    <h3 data-i18n="colData">Data structures</h3>
+    <ul>
+      <li><code>MyHashMap</code> — chaining, resize, bit-spread index</li>
+      <li><code>MyArrayList</code> — amortized-O(1) dynamic array</li>
+      <li><code>MyLinkedList</code> — doubly linked</li>
+      <li><code>MyStack</code> · <code>MyQueue</code> (ring buffer)</li>
+      <li><code>MyPriorityQueue</code> — binary heap</li>
+      <li><code>MyLRUCache</code> — O(1) get/put + eviction</li>
+    </ul>
+  </div>
+  <div class="col">
+    <h3 data-i18n="colConc">Concurrency</h3>
+    <ul>
+      <li>thread-safe counter — <code>synchronized</code> vs CAS</li>
+      <li>producer–consumer — blocking queue, wait/notify</li>
+      <li>thread pool — workers + task queue</li>
+    </ul>
+    <h3 data-i18n="colFw" style="margin-top:1.25rem">Framework</h3>
+    <ul>
+      <li>mini DI container — reflection, IoC, singletons</li>
+    </ul>
+  </div>
+</div>
+
+<h2 data-i18n="vizTitle">Interactive visualizations</h2>
+<p class="lead" data-i18n="vizLead">Open and play — each explains a structure step by step.</p>
+<div class="grid" id="viz-grid"></div>
+
+<h2 data-i18n="conTitle">Concept deep-dives</h2>
+<p class="lead" data-i18n="conLead">How each piece works internally, with interview angles.</p>
+<div class="grid" id="concept-grid"></div>
+
+<footer>
+  <span data-i18n="footerBuilt">Built by Aidar</span> ·
+  <a href="https://github.com/aidarkazybekov/java-foundations">GitHub</a> ·
+  <a href="https://github.com/aidarkazybekov/java-foundations/blob/main/CONTRIBUTING.md" data-i18n="footerContribute">contribute a concept or visualization</a>
+</footer>
+
+<script>
+window.I18N = {
+  en: {
+    heroTitle: "Core Java, from scratch.",
+    heroTagline: "Data structures, concurrency primitives, and a DI container — rebuilt by hand, test-driven, to prove how the abstractions actually work underneath.",
+    badgeComponents: "11 components", badgeTests: "104 tests green", badgeDeps: "zero runtime deps",
+    whatTitle: "What this is",
+    whatLead: "Not a library to use — a proof of understanding. The set builds on itself: the LRU cache reuses the hand-written HashMap and linked list, the thread pool runs on the blocking queue, and the DI container caches its singletons in the HashMap.",
+    colData: "Data structures", colConc: "Concurrency", colFw: "Framework",
+    vizTitle: "Interactive visualizations", vizLead: "Open and play — each explains a structure step by step.",
+    conTitle: "Concept deep-dives", conLead: "How each piece works internally, with interview angles.",
+    footerBuilt: "Built by Aidar", footerContribute: "contribute a concept or visualization"
+  },
+  ru: {
+    heroTitle: "Java с нуля.",
+    heroTagline: "Структуры данных, примитивы конкурентности и DI-контейнер — собраны руками, через тесты, чтобы понять, как абстракции работают изнутри.",
+    badgeComponents: "11 компонентов", badgeTests: "104 теста зелёные", badgeDeps: "без зависимостей",
+    whatTitle: "Что это",
+    whatLead: "Не библиотека для использования — доказательство понимания. Набор опирается на себя: LRU-кэш использует написанные руками HashMap и связный список, пул потоков работает на блокирующей очереди, а DI-контейнер кэширует синглтоны в HashMap.",
+    colData: "Структуры данных", colConc: "Конкурентность", colFw: "Фреймворк",
+    vizTitle: "Интерактивные визуализации", vizLead: "Открой и поиграй — каждая объясняет структуру по шагам.",
+    conTitle: "Разбор концептов", conLead: "Как каждая часть устроена изнутри, с углом для собеседования.",
+    footerBuilt: "Сделал Айдар", footerContribute: "добавить концепт или визуализацию"
+  }
+};
+
+var CONTENT = null;
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function cardHTML(href, title, desc, meta){
+  return '<a class="card" href="' + href + '"><h3>' + esc(title) + '</h3><p>' + esc(desc) + '</p><span class="meta">' + meta + '</span></a>';
+}
+function renderCards(){
+  if(!CONTENT) return;
+  var lang = document.documentElement.getAttribute('data-lang') || 'en';
+  var playLabel = lang === 'ru' ? 'запустить →' : 'play →';
+  var readLabel = lang === 'ru' ? 'читать →' : 'read →';
+  document.getElementById('viz-grid').innerHTML =
+    CONTENT.visualizations.map(function(v){ return cardHTML('visualizations/' + v.file, v.title, v.desc, playLabel); }).join('');
+  document.getElementById('concept-grid').innerHTML =
+    CONTENT.concepts.map(function(c){ return cardHTML('concept.html?doc=' + c.slug, c.title, c.desc, readLabel); }).join('');
+}
+window.onLangChange = renderCards;
+fetch('content.json').then(function(r){ return r.json(); }).then(function(d){ CONTENT = d; renderCards(); });
+</script>
+<script src="theme.js"></script>
+<script src="lang.js"></script>
+</body>
+</html>

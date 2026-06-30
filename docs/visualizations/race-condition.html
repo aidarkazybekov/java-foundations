@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Race condition — java-foundations</title>
+<script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="topbar">
+  <a class="brand" href="../index.html"><span class="dot"></span>← java-foundations</a>
+  <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
+</div>
+<h1>Race condition (count++ под потоками)</h1>
+<p class="lead">Два потока делают <code>count++</code> = read → add → write. Ты управляешь порядком шагов. Чередуй (A read, B read, A write, B write) → потеряешь инкремент; прогони A целиком, потом B → будет верно.</p>
+
+<div style="display:flex; align-items:baseline; gap:10px; margin:1rem 0;">
+  <span style="font-size:14px; color:var(--color-text-secondary);">общий <code>count</code> =</span>
+  <span id="rc-count" style="font-size:32px; font-weight:500;">5</span>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:1rem 0;">
+  <div style="border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-lg); padding:1rem;">
+    <div style="font-weight:500; color:var(--color-text-info); margin-bottom:8px;">Поток A</div>
+    <div style="font-size:13px; color:var(--color-text-secondary);">его регистр</div>
+    <div id="rc-A-reg" style="font-size:22px; font-weight:500; margin-bottom:8px;">—</div>
+    <div id="rc-A-next" style="font-size:13px; color:var(--color-text-tertiary); min-height:18px;">next: read</div>
+    <button onclick="rcStep('A')" id="rc-A-btn" style="margin-top:10px; width:100%;">▶ шаг A</button>
+  </div>
+  <div style="border:0.5px solid var(--color-border-secondary); border-radius:var(--border-radius-lg); padding:1rem;">
+    <div style="font-weight:500; color:var(--color-text-warning); margin-bottom:8px;">Поток B</div>
+    <div style="font-size:13px; color:var(--color-text-secondary);">его регистр</div>
+    <div id="rc-B-reg" style="font-size:22px; font-weight:500; margin-bottom:8px;">—</div>
+    <div id="rc-B-next" style="font-size:13px; color:var(--color-text-tertiary); min-height:18px;">next: read</div>
+    <button onclick="rcStep('B')" id="rc-B-btn" style="margin-top:10px; width:100%;">▶ шаг B</button>
+  </div>
+</div>
+
+<div style="margin:1rem 0;"><button onclick="rcReset()">reset</button></div>
+
+<div id="rc-log" style="font-size:13px; color:var(--color-text-secondary); line-height:1.8; font-family:var(--font-mono);"></div>
+<div id="rc-verdict" style="font-size:15px; font-weight:500; margin-top:10px; min-height:24px;"></div>
+
+<script>
+const RC_START = 5;
+let rcCount, rcT, rcLog;
+
+function rcReset() {
+  rcCount = RC_START;
+  rcT = { A: { pc: 0, reg: null }, B: { pc: 0, reg: null } };
+  rcLog = [];
+  rcRender();
+}
+
+const RC_LABEL = ['read: reg = count', 'add: reg = reg + 1', 'write: count = reg', 'done'];
+
+function rcStep(name) {
+  const t = rcT[name];
+  if (t.pc === 0) { t.reg = rcCount; rcLog.push(name + ': read count → reg = ' + t.reg); }
+  else if (t.pc === 1) { t.reg = t.reg + 1; rcLog.push(name + ': add → reg = ' + t.reg); }
+  else if (t.pc === 2) { rcCount = t.reg; rcLog.push(name + ': write count = ' + t.reg); }
+  if (t.pc < 3) t.pc++;
+  rcRender();
+}
+
+function rcRender() {
+  document.getElementById('rc-count').textContent = rcCount;
+  for (const name of ['A', 'B']) {
+    const t = rcT[name];
+    document.getElementById('rc-' + name + '-reg').textContent = t.reg === null ? '—' : t.reg;
+    document.getElementById('rc-' + name + '-next').textContent = 'next: ' + RC_LABEL[t.pc];
+    document.getElementById('rc-' + name + '-btn').disabled = t.pc === 3;
+  }
+  document.getElementById('rc-log').innerHTML = rcLog.map(l => '<div>' + l + '</div>').join('');
+  const v = document.getElementById('rc-verdict');
+  if (rcT.A.pc === 3 && rcT.B.pc === 3) {
+    const expected = RC_START + 2;
+    if (rcCount === expected) {
+      v.textContent = '✓ count = ' + rcCount + ' — верно (оба инкремента сохранились).';
+      v.style.color = 'var(--color-text-success)';
+    } else {
+      v.textContent = '✗ count = ' + rcCount + ', ожидалось ' + expected + ' — lost update! Один инкремент исчез.';
+      v.style.color = 'var(--color-text-danger)';
+    }
+  } else { v.textContent = ''; }
+}
+
+rcReset();
+</script>
+<script src="../theme.js"></script>
+</body>
+</html>

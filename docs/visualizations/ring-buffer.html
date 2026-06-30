@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ring buffer — java-foundations</title>
+<script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="topbar">
+  <a class="brand" href="../index.html"><span class="dot"></span>← java-foundations</a>
+  <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
+</div>
+<h1>Кольцевой буфер (MyQueue)</h1>
+<p class="lead">FIFO-очередь на массиве: <code>enqueue</code> пишет в <code>(head+size)%cap</code>, <code>dequeue</code> двигает <code>head</code> с заворотом через край. Нажимай и смотри.</p>
+
+<div style="display:flex; gap:8px; flex-wrap:wrap; margin:1rem 0;">
+  <button onclick="rbEnqueue()">enqueue</button>
+  <button onclick="rbDequeue()">dequeue</button>
+  <button onclick="rbReset()">reset</button>
+</div>
+
+<div id="rb-cells" style="display:flex; gap:10px; margin:1.5rem 0; justify-content:flex-start;"></div>
+
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin:1.5rem 0;">
+  <div style="background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:.75rem 1rem; min-width:90px;">
+    <div style="font-size:13px; color:var(--color-text-secondary);">head</div>
+    <div id="rb-head" style="font-size:24px; font-weight:500;">0</div>
+  </div>
+  <div style="background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:.75rem 1rem; min-width:90px;">
+    <div style="font-size:13px; color:var(--color-text-secondary);">size</div>
+    <div id="rb-size" style="font-size:24px; font-weight:500;">0</div>
+  </div>
+  <div style="background:var(--color-background-secondary); border-radius:var(--border-radius-md); padding:.75rem 1rem; min-width:200px; flex:1;">
+    <div style="font-size:13px; color:var(--color-text-secondary);">next write = (head + size) % 6</div>
+    <div id="rb-write" style="font-size:24px; font-weight:500;">0</div>
+  </div>
+</div>
+
+<div id="rb-status" style="font-size:14px; color:var(--color-text-secondary); line-height:1.7;"></div>
+
+<script>
+const RB_CAP = 6;
+let rbArr = new Array(RB_CAP).fill(null);
+let rbHead = 0, rbSize = 0, rbNext = 1, rbMsg = "Пусто. head = size = 0.";
+
+function rbLogicalSet() {
+  const s = new Set();
+  for (let k = 0; k < rbSize; k++) s.add((rbHead + k) % RB_CAP);
+  return s;
+}
+
+function rbRender() {
+  const filled = rbLogicalSet();
+  const writeIdx = (rbHead + rbSize) % RB_CAP;
+  const full = rbSize === RB_CAP;
+  const cells = document.getElementById('rb-cells');
+  cells.innerHTML = '';
+  for (let i = 0; i < RB_CAP; i++) {
+    const isFilled = filled.has(i);
+    const isHead = rbSize > 0 && i === rbHead;
+    const isWrite = !full && i === writeIdx;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:6px;';
+    const marker = document.createElement('div');
+    marker.style.cssText = 'font-size:12px; font-weight:500; height:16px;';
+    if (isHead) { marker.textContent = '↓ head'; marker.style.color = 'var(--color-text-info)'; }
+    else if (isWrite) { marker.textContent = '↓ write'; marker.style.color = 'var(--color-text-success)'; }
+    const cell = document.createElement('div');
+    cell.style.cssText = 'width:74px; height:64px; border-radius:var(--border-radius-md); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:500; border:0.5px solid var(--color-border-secondary);'
+      + (isFilled ? 'background:var(--color-background-info); color:var(--color-text-info);' : 'background:var(--color-background-secondary); color:var(--color-text-tertiary);');
+    cell.textContent = isFilled ? rbArr[i] : '·';
+    const idx = document.createElement('div');
+    idx.style.cssText = 'font-size:12px; color:var(--color-text-tertiary);';
+    idx.textContent = '[' + i + ']';
+    wrap.appendChild(marker); wrap.appendChild(cell); wrap.appendChild(idx);
+    cells.appendChild(wrap);
+  }
+  document.getElementById('rb-head').textContent = rbHead;
+  document.getElementById('rb-size').textContent = rbSize;
+  document.getElementById('rb-write').textContent = full ? 'FULL' : writeIdx;
+  document.getElementById('rb-status').textContent = rbMsg;
+}
+
+function rbEnqueue() {
+  if (rbSize === RB_CAP) { rbMsg = 'Полно (size = 6). Настоящая очередь сделала бы resize.'; rbRender(); return; }
+  const w = (rbHead + rbSize) % RB_CAP;
+  rbArr[w] = rbNext;
+  rbMsg = 'enqueue(' + rbNext + '): записал в (head+size)%6 = (' + rbHead + '+' + rbSize + ')%6 = ' + w + ', потом size++.';
+  rbNext++;
+  rbSize++;
+  rbRender();
+}
+
+function rbDequeue() {
+  if (rbSize === 0) { rbMsg = 'Пусто (size = 0). Забирать нечего.'; rbRender(); return; }
+  const v = rbArr[rbHead];
+  rbArr[rbHead] = null;
+  const old = rbHead;
+  rbHead = (rbHead + 1) % RB_CAP;
+  rbSize--;
+  rbMsg = 'dequeue() = ' + v + ': взял индекс head = ' + old + ', потом head = (head+1)%6 = ' + rbHead + (rbHead === 0 && old === RB_CAP - 1 ? '  ← завернулся на 0!' : '') + '.';
+  rbRender();
+}
+
+function rbReset() {
+  rbArr = new Array(RB_CAP).fill(null);
+  rbHead = 0; rbSize = 0; rbNext = 1;
+  rbMsg = 'Сброс. head = size = 0.';
+  rbRender();
+}
+
+rbRender();
+</script>
+<script src="../theme.js"></script>
+</body>
+</html>
