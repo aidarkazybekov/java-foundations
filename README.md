@@ -24,19 +24,19 @@ Data structures — `src/main/java/com/aidar/foundations/collections/`:
 | ✅ `MyStack` | LIFO | composition — thin facade over `MyLinkedList` |
 | ✅ `MyQueue` | FIFO ring buffer | `(head+size)%cap` wrap-around, logical-order resize |
 | ✅ `MyPriorityQueue` | min-heap | array-mapped complete tree, sift-up / sift-down |
-| ⬜ `MyLRUCache` | LRU cache | hash map + doubly linked list, O(1) get/put + eviction |
+| ✅ `MyLRUCache` | LRU cache | hash map + doubly linked list, O(1) get/put + eviction |
 
-Concurrency (planned):
+Concurrency — `src/main/java/com/aidar/foundations/concurrency/`:
 
-| Kata | Idea |
-|------|------|
-| ⬜ thread-safe counter | `synchronized` vs `AtomicLong` |
-| ⬜ producer–consumer | bounded blocking queue, `wait`/`notify` |
-| ⬜ thread pool | task queue + worker threads |
-| ⬜ mini DI container | constructor injection by reflection |
+| Kata | Idea | Key concept |
+|------|------|-------------|
+| ✅ thread-safe counter | one counter, three implementations | race conditions, atomicity vs visibility, `synchronized` vs `AtomicLong`/CAS |
+| ⬜ producer–consumer | bounded blocking queue | `wait`/`notify` inter-thread signaling |
+| ⬜ thread pool | task queue + worker threads | |
+| ⬜ mini DI container | constructor injection by reflection | |
 
 Each type has a focused JUnit suite covering happy paths and edge cases
-(collisions, wrap-around, resize, empty/single-element). **75 tests green.**
+(collisions, wrap-around, resize, empty/single-element, thread-safety). **93 tests green.**
 
 ## Requirements
 
