@@ -1,66 +1,66 @@
 
-# ArrayList vs LinkedList — какой выбрать и почему
+# ArrayList vs LinkedList — which to choose and why
 
-> Классический вопрос на собесе по Java. Большинство помнят «ArrayList на массиве, LinkedList на ссылках» — но плывут на «а что быстрее и почему». Здесь разберём так, чтобы ты ответил уверенно, включая аргумент про cache locality, который отличает junior от middle.
+> A classic Java interview question. Most people remember "ArrayList is backed by an array, LinkedList by references" — but flounder on "which is faster and why". Here we'll break it down so you can answer confidently, including the cache-locality argument that separates a junior from a middle.
 
-Оба класса реализуют интерфейс `List`: упорядоченный список с доступом по индексу. Снаружи взаимозаменяемы. **Внутри устроены принципиально по-разному** — отсюда вся разница в производительности.
+Both classes implement the `List` interface: an ordered list with index access. From the outside they're interchangeable. **Internally they're fundamentally different** — and that's where all the performance difference comes from.
 
 ---
 
-## ArrayList — это массив
+## ArrayList — it's an array
 
-`ArrayList` хранит элементы в обычном массиве: они лежат в памяти **подряд**, доступ по индексу.
+`ArrayList` stores elements in a plain array: they sit in memory **contiguously**, with index access.
 
 ```
-индекс:   0     1     2     3     4
+index:    0     1     2     3     4
         ┌─────┬─────┬─────┬─────┬─────┐
-        │  A  │  B  │  C  │  D  │  E  │   ← один непрерывный кусок памяти
+        │  A  │  B  │  C  │  D  │  E  │   ← one contiguous chunk of memory
         └─────┴─────┴─────┴─────┴─────┘
 ```
 
-### Суперсила: `get(i)` за O(1)
+### Superpower: `get(i)` in O(1)
 
-Массив знает адрес начала. Чтобы достать элемент `i`, он прыгает сразу по адресу `начало + i`. Мгновенно, неважно — 5-й элемент или 500000-й.
+The array knows the address of its start. To retrieve element `i`, it jumps straight to the address `start + i`. Instant, whether it's the 5th element or the 500000th.
 
-### Что при `add()`, когда массив забит
+### What happens on `add()` when the array is full
 
-Массив имеет фиксированный размер. Когда он заполнен, а ты добавляешь ещё:
+An array has a fixed size. When it's full and you add another element:
 
-1. Создаётся **новый массив побольше** (примерно ×1.5).
-2. Все старые элементы **копируются** в него — это O(n).
+1. A **new, bigger array** is created (roughly ×1.5).
+2. All old elements are **copied** into it — that's O(n).
 
-Но это случается **не на каждый** `add`. Обычно место есть, и добавление в конец — O(1). Дорогое копирование — лишь изредка. Если усреднить, добавление в конец — **amortized O(1)** (амортизированно дёшево).
+But this happens **not on every** `add`. Usually there's room, and appending to the end is O(1). The expensive copy is only occasional. Averaged out, appending to the end is **amortized O(1)** (amortized cheap).
 
-### Слабость: вставка/удаление в середину
+### Weakness: insert/remove in the middle
 
-Элементы лежат подряд по индексам. Чтобы вставить в начало (`add(0, x)`), надо **сдвинуть все остальные** на одну позицию вправо:
+Elements sit contiguously by index. To insert at the front (`add(0, x)`), you have to **shift all the others** one position to the right:
 
 ```
 add(0, X):
         ┌─────┬─────┬─────┬─────┐
         │  A  │  B  │  C  │  D  │
         └─────┴─────┴─────┴─────┘
-           └────┴────┴────┴────► всё сдвигается вправо  →  O(n)
+           └────┴────┴────┴────► everything shifts right  →  O(n)
         ┌─────┬─────┬─────┬─────┬─────┐
         │  X  │  A  │  B  │  C  │  D  │
         └─────┴─────┴─────┴─────┴─────┘
 ```
 
-Удаление из середины — то же самое: сдвигать, чтобы закрыть дыру. **O(n).**
+Removal from the middle is the same: shift to close the gap. **O(n).**
 
 ---
 
-## LinkedList — это цепочка узлов
+## LinkedList — it's a chain of nodes
 
-`LinkedList` хранит каждый элемент в **узле (node)**. Узел держит значение + **ссылку на следующий** узел (а в Java — ещё и на предыдущий: это **двусвязный** список). Узлы разбросаны по памяти и держатся друг за друга ссылками.
+`LinkedList` stores each element in a **node**. A node holds a value + a **reference to the next** node (and in Java, also to the previous one: it's a **doubly-linked** list). Nodes are scattered across memory and held together by references.
 
 ```
 [A|prev|next] ⇄ [B|prev|next] ⇄ [C|prev|next] ⇄ null
 ```
 
-### Сила: вставка/удаление = переподключить ссылки
+### Strength: insert/remove = rewire references
 
-Чтобы вставить элемент между B и C — не нужно ничего сдвигать. Достаточно переписать ссылки соседей:
+To insert an element between B and C — you don't need to shift anything. Just rewrite the neighbors' references:
 
 ```mermaid
 graph LR
@@ -68,80 +68,80 @@ graph LR
   B --> X((X))
   X --> C((C))
   C --> D((D))
-  B -.->|"старая ссылка убрана"| C
+  B -.->|"old reference removed"| C
 ```
 
-Само переподключение — **O(1)**.
+The rewiring itself is **O(1)**.
 
-### Слабость: `get(i)` за O(n)
+### Weakness: `get(i)` in O(n)
 
-У узлов нет индексов-адресов. Чтобы добраться до i-го элемента, надо **идти по цепочке** от начала, считая шаги. 500000-й элемент → 500000 переходов. **O(n).**
-
----
-
-## Ловушка собеседования: «быстрая вставка» LinkedList — миф
-
-Да, переподключить ссылки — O(1). Но чтобы вставить **в середину**, надо сначала **дойти** до той середины — а это O(n). Значит `add(i, x)` в середину у LinkedList **всё равно O(n)**.
-
-Выигрыш O(1) реален только когда ты **уже стоишь на месте**: на концах списка или когда держишь итератор на нужной позиции.
+Nodes have no index-addresses. To reach the i-th element, you have to **walk the chain** from the start, counting steps. The 500000th element → 500000 hops. **O(n).**
 
 ---
 
-## Итоговая таблица
+## Interview trap: LinkedList's "fast insert" is a myth
 
-| Операция | ArrayList | LinkedList |
+Yes, rewiring references is O(1). But to insert **in the middle**, you first have to **reach** that middle — and that's O(n). So `add(i, x)` in the middle of a LinkedList is **still O(n)**.
+
+The O(1) win is real only when you're **already at the spot**: at the ends of the list, or when you hold an iterator at the desired position.
+
+---
+
+## Summary table
+
+| Operation | ArrayList | LinkedList |
 |---|---|---|
-| `get(i)` по индексу | **O(1)** 🟢 | O(n) 🔴 |
-| `add()` в конец | amortized O(1) 🟢 | O(1) 🟢 |
-| вставка/удаление на концах | O(n) / O(1)* | **O(1)** 🟢 |
-| вставка/удаление в середину | O(n) 🔴 | O(n) 🔴 (на поиск позиции) |
-| память на элемент | только значение 🟢 | значение + 2 ссылки + объект-узел 🔴 |
+| `get(i)` by index | **O(1)** 🟢 | O(n) 🔴 |
+| `add()` at the end | amortized O(1) 🟢 | O(1) 🟢 |
+| insert/remove at the ends | O(n) / O(1)* | **O(1)** 🟢 |
+| insert/remove in the middle | O(n) 🔴 | O(n) 🔴 (finding the position) |
+| memory per element | value only 🟢 | value + 2 references + node object 🔴 |
 
-\* удаление с конца ArrayList — O(1); с начала — O(n) (сдвиг).
-
----
-
-## Почему на практике почти всегда ArrayList
-
-**1. Random access O(1)** — берёшь любой элемент по индексу мгновенно.
-
-**2. Cache locality — главный аргумент уровня middle.**
-Элементы ArrayList лежат в памяти подряд. Процессор подтягивает непрерывную память в кэш кусками, поэтому проход по ArrayList **летает**. Узлы LinkedList разбросаны по памяти случайно → каждый переход по ссылке = промах кэша → даже простой обход в разы медленнее, хотя оба формально O(n).
-
-**3. Память.** LinkedList тащит на каждый элемент 2 лишние ссылки + объект-узел. ArrayList хранит только значения.
-
-**4. «Быстрая вставка» LinkedList редко применима** — поиск позиции всё равно O(n).
-
-**Вывод:** бери `ArrayList` по умолчанию. `LinkedList` — узкий случай (частые операции с обоими концами, очередь/дек), но и там обычно лучше **`ArrayDeque`**. В реальном проде LinkedList почти не встретишь.
+\* removal from the end of an ArrayList is O(1); from the front it's O(n) (shift).
 
 ---
 
-## Шпаргалка для собеседования
+## Why in practice it's almost always ArrayList
 
-**«В чём разница ArrayList и LinkedList?»**
-ArrayList — на массиве (элементы подряд, доступ по индексу). LinkedList — двусвязный список узлов со ссылками.
+**1. Random access O(1)** — grab any element by index instantly.
 
-**«Что быстрее для get(i)?»**
-ArrayList — O(1). LinkedList — O(n) (обход цепочки).
+**2. Cache locality — the key middle-level argument.**
+ArrayList's elements sit in memory contiguously. The CPU pulls contiguous memory into the cache in chunks, so iterating over an ArrayList **flies**. LinkedList's nodes are scattered randomly across memory → every reference hop = a cache miss → even a plain traversal is several times slower, even though both are formally O(n).
 
-**«А LinkedList же быстрее на вставке?»**
-Только переподключение ссылок — O(1), но дойти до позиции в середине — O(n). Реальный выигрыш лишь на концах.
+**3. Memory.** LinkedList drags along 2 extra references + a node object per element. ArrayList stores only the values.
 
-**«Что выберешь по умолчанию и почему?»**
-ArrayList: random access, cache locality (непрерывная память → кэш-дружелюбен), меньше памяти.
+**4. LinkedList's "fast insert" is rarely applicable** — finding the position is still O(n).
 
-**«Когда LinkedList?»**
-Частые add/remove с обоих концов. Но обычно ArrayDeque лучше.
+**Conclusion:** reach for `ArrayList` by default. `LinkedList` is a narrow case (frequent operations at both ends, a queue/deque), but even there **`ArrayDeque`** is usually better. In real production you'll almost never see LinkedList.
+
+---
+
+## Interview cheat sheet
+
+**"What's the difference between ArrayList and LinkedList?"**
+ArrayList — backed by an array (elements contiguous, index access). LinkedList — a doubly-linked list of nodes with references.
+
+**"Which is faster for get(i)?"**
+ArrayList — O(1). LinkedList — O(n) (walking the chain).
+
+**"But isn't LinkedList faster on inserts?"**
+Only the rewiring is O(1), but reaching a position in the middle is O(n). The real win is only at the ends.
+
+**"What would you pick by default and why?"**
+ArrayList: random access, cache locality (contiguous memory → cache-friendly), less memory.
+
+**"When LinkedList?"**
+Frequent add/remove at both ends. But usually ArrayDeque is better.
 
 ---
 
 ## TL;DR
 
-1. ArrayList = массив: `get(i)` O(1), add-в-конец amortized O(1), вставка в середину O(n).
-2. LinkedList = двусвязные узлы: вставка на месте O(1), но `get(i)` O(n).
-3. «Быстрая вставка» LinkedList — миф: поиск позиции в середине всё равно O(n).
-4. По умолчанию — ArrayList: random access + cache locality + меньше памяти.
+1. ArrayList = array: `get(i)` O(1), append amortized O(1), insert in the middle O(n).
+2. LinkedList = doubly-linked nodes: insert-in-place O(1), but `get(i)` O(n).
+3. LinkedList's "fast insert" is a myth: finding the position in the middle is still O(n).
+4. By default — ArrayList: random access + cache locality + less memory.
 
-## Связанные темы
+## Related topics
 - hashmap-internals
 - equals-and-hashCode

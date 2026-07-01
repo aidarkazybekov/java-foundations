@@ -1,107 +1,107 @@
 
-# Потокобезопасность и race conditions
+# Thread safety and race conditions
 
-> Фундамент конкурентности на одном примере — счётчике. Если поймёшь, почему `count++` ломается под потоками и три способа это починить (synchronized / Atomic / почему volatile не спасает), закроешь половину собеса по concurrency.
+> The foundation of concurrency on a single example — a counter. If you understand why `count++` breaks under threads and the three ways to fix it (synchronized / Atomic / why volatile doesn't help), you'll close half of a concurrency interview.
 
-Связано: jmm-visibility-volatile.
-
----
-
-## Потоки и общая память
-
-Процесс может иметь несколько **потоков** — независимых линий исполнения. На многоядерном CPU они бегут **реально одновременно**.
-
-- **Локальные переменные** (стек потока) — приватные, безопасны.
-- **Поля объектов** (куча) — **общие** между потоками. Вот здесь все баги.
-
-`Thread` — низкоуровневый инструмент: `new Thread(runnable)` + `start()` (запустить параллельно; `run()` бы выполнил в текущем потоке — частая ошибка), `join()` (дождаться завершения). В реальном коде вместо сырых потоков берут пулы (`ExecutorService`).
+Related: jmm-visibility-volatile.
 
 ---
 
-## Почему `count++` ломается
+## Threads and shared memory
 
-`count++` — это **не** одна операция, а три (read-modify-write): прочитать → +1 → записать. ОС может прервать поток между ними. Два потока чередуются:
+A process can have multiple **threads** — independent lines of execution. On a multi-core CPU they run **truly simultaneously**.
+
+- **Local variables** (the thread's stack) are private, safe.
+- **Object fields** (the heap) are **shared** between threads. This is where all the bugs are.
+
+`Thread` is a low-level tool: `new Thread(runnable)` + `start()` (run in parallel; `run()` would execute it in the current thread — a common mistake), `join()` (wait for completion). In real code, instead of raw threads you use pools (`ExecutorService`).
+
+---
+
+## Why `count++` breaks
+
+`count++` is **not** one operation but three (read-modify-write): read → +1 → write. The OS can preempt the thread between them. Two threads interleave:
 
 ```
 count = 5
-A: читает 5
-B: читает 5        ← оба прочитали одно
-A: пишет 6
-B: пишет 6         ← инкремент A затёрт (lost update)
-count = 6  (а должно 7)
+A: reads 5
+B: reads 5         ← both read the same value
+A: writes 6
+B: writes 6        ← A's increment is overwritten (lost update)
+count = 6  (should be 7)
 ```
 
-Это **race condition**: результат зависит от непредсказуемого тайминга. На 10 потоках × 10000 инкрементов наивный счётчик вместо 100000 даёт ~20000 — и каждый раз разное.
+This is a **race condition**: the result depends on unpredictable timing. With 10 threads × 10000 increments, a naive counter gives ~20000 instead of 100000 — and a different value every time.
 
 ---
 
-## Два РАЗНЫХ врага
+## Two DIFFERENT enemies
 
-| Враг | Что это | Чем лечить |
+| Enemy | What it is | How to cure |
 |---|---|---|
-| **Атомарность** | compound-операцию прервали на середине | synchronized, Atomic |
-| **Видимость** | поток не видит чужую запись (она в кэше ядра) | synchronized, volatile, Atomic |
+| **Atomicity** | a compound operation was preempted midway | synchronized, Atomic |
+| **Visibility** | a thread doesn't see another's write (it's in the core's cache) | synchronized, volatile, Atomic |
 
-Их надо разделять: `volatile` даёт видимость, но НЕ атомарность.
+They must be kept separate: `volatile` gives visibility but NOT atomicity.
 
 ---
 
-## Три решения для счётчика
+## Three solutions for the counter
 
-### 1. `synchronized` (пессимизм: лочим)
-У каждого объекта есть встроенный замок. `synchronized` берёт его на входе, отпускает на выходе — внутри только один поток.
+### 1. `synchronized` (pessimism: we lock)
+Every object has a built-in lock. `synchronized` takes it on entry, releases it on exit — inside, only one thread.
 ```java
 public synchronized void increment() { count++; }
-public synchronized long get() { return count; }   // get ТОЖЕ — ради видимости!
+public synchronized long get() { return count; }   // get TOO — for visibility!
 ```
-🔑 И писатель, и читатель должны лочиться на одном замке — иначе читатель увидит устаревшее. Best practice: приватный `final Object lock` вместо `this` (чтобы замок не торчал наружу).
+🔑 Both the writer and the reader must lock on the same lock — otherwise the reader sees a stale value. Best practice: a private `final Object lock` instead of `this` (so the lock doesn't stick out publicly).
 
-### 2. `AtomicLong` (оптимизм: CAS, lock-free)
+### 2. `AtomicLong` (optimism: CAS, lock-free)
 ```java
 private final AtomicLong count = new AtomicLong();
 public void increment() { count.incrementAndGet(); }
 ```
-Внутри — **CAS** (compare-and-swap), аппаратная атомарная инструкция: `записать новое, только если значение всё ещё == ожидаемому`. Инкремент = оптимистичный цикл:
+Inside is **CAS** (compare-and-swap), a hardware atomic instruction: `write the new value, only if the value is still == the expected one`. The increment is an optimistic loop:
 ```
 do { cur = get(); next = cur + 1; } while (!compareAndSet(cur, next));
 ```
-Если кто-то вклинился — `compareAndSet` вернёт false → перечитал свежее → повторил. Запись проходит только когда подтверждено, что не меняли → lost update невозможен. Ни один поток не **спит** (lock-free).
+If someone cut in — `compareAndSet` returns false → re-read the fresh value → retry. The write goes through only when it's confirmed nobody changed it → a lost update is impossible. No thread ever **sleeps** (lock-free).
 
-### 3. `volatile` — НЕ решение для счётчика ❌
-`volatile long count; count++` — всё ещё гонка. `volatile` гарантирует только видимость одиночной записи, не атомарность read-modify-write. Годен для флага (`volatile boolean running`), не для счётчика.
+### 3. `volatile` — NOT a solution for a counter ❌
+`volatile long count; count++` is still a race. `volatile` guarantees only the visibility of a single write, not the atomicity of read-modify-write. Good for a flag (`volatile boolean running`), not for a counter.
 
 ---
 
-## synchronized vs Atomic — когда что
+## synchronized vs Atomic — when to use which
 
 | | synchronized | Atomic (CAS) |
 |---|---|---|
-| подход | пессимизм: лочим, ждём | оптимизм: пробуем-повторяем |
-| блокировка | да | нет (lock-free) |
-| область | любая логика, **несколько полей** согласованно | **одна** переменная, простые операции |
-| скорость (средняя нагрузка) | медленнее | быстрее |
+| approach | pessimism: lock, wait | optimism: try-retry |
+| blocking | yes | no (lock-free) |
+| scope | any logic, **multiple fields** consistently | **one** variable, simple operations |
+| speed (moderate load) | slower | faster |
 
-Правило: одиночный счётчик/флаг → Atomic; несколько полей, меняемых согласованно → замок.
+Rule: a single counter/flag → Atomic; multiple fields changed consistently → a lock.
 
 ---
 
-## Как тестировать конкурентность
+## How to test concurrency
 
-Гонка недетерминирована — один прогон может пройти случайно. Нагружай: N потоков × M операций, `start()` всех, потом `join()` всех (два **отдельных** цикла — иначе потоки выполнятся по очереди и параллелизма не будет), проверь итог == N*M. Наивный почти всегда недосчитается, потокобезопасный — стабилен.
+A race is non-deterministic — a single run may pass by luck. Load it: N threads × M operations, `start()` all of them, then `join()` all of them (two **separate** loops — otherwise the threads run one after another and there's no parallelism), check the total == N*M. A naive one almost always undercounts, a thread-safe one is stable.
 
-## Interview-traps
+## Interview traps
 
-- «`count++` атомарна?» → нет, read-modify-write, гонка.
-- «`volatile` сделает счётчик потокобезопасным?» → нет, только видимость; нужен Atomic/synchronized.
-- «synchronized только на increment, get голый — ок?» → нет, дыра в видимости; читатель тоже должен лочиться (или поле volatile).
-- «CAS vs lock?» → оптимизм vs пессимизм; CAS lock-free, но под адской конкуренцией много повторов.
-- ABA-проблема CAS → `AtomicStampedReference`.
+- "Is `count++` atomic?" → no, read-modify-write, a race.
+- "Will `volatile` make the counter thread-safe?" → no, only visibility; you need Atomic/synchronized.
+- "synchronized only on increment, get is bare — ok?" → no, a visibility hole; the reader must lock too (or the field must be volatile).
+- "CAS vs lock?" → optimism vs pessimism; CAS is lock-free, but under fierce contention there are many retries.
+- The ABA problem of CAS → `AtomicStampedReference`.
 
 ## Connected
 
 - jmm-visibility-volatile
 - ring-buffer-queue
 
-## Где встречалось
+## Where it appeared
 
-`java-foundations` kata #8: интерфейс `Counter` + `NaiveCounter` (гоночный, демо), `AtomicCounter`, `SynchronizedCounter`; многопоточный тест-харнесс ловит гонку наивного и подтверждает корректность двух других.
+`java-foundations` kata #8: a `Counter` interface + `NaiveCounter` (racy, a demo), `AtomicCounter`, `SynchronizedCounter`; a multithreaded test harness catches the naive one's race and confirms the correctness of the other two.

@@ -3,53 +3,113 @@
   "concepts": [
     {
       "slug": "arraylist-vs-linkedlist",
-      "title": "ArrayList vs LinkedList — какой выбрать и почему",
-      "desc": "Классический вопрос на собесе по Java. Большинство помнят «ArrayList на массиве, LinkedList на ссылках» — но плывут на «а что быстрее и почему»…"
-    },
-    {
-      "slug": "dependency-injection-ioc",
-      "title": "Dependency Injection, IoC и как это делает Spring",
-      "desc": "Что Spring делает «магически» под `@Component`/`@Autowired`. Понять DI/IoC/singleton + рефлексию = понять ядро Spring. На собесе по Spring это вопрос…"
-    },
-    {
-      "slug": "lru-cache",
-      "title": "LRU-кэш — O(1) get/put с выселением",
-      "desc": "«Спроектируй LRU-кэш» — прямой вопрос на собесе (LeetCode 146). Проверяет, умеешь ли ты скомбинировать две структуры так, чтобы обе операции были…"
-    },
-    {
-      "slug": "producer-consumer-blocking-queue",
-      "title": "Producer–consumer и блокирующая очередь",
-      "desc": "Как потоки **координируются** через `wait`/`notify` (а не просто защищают данные). Паттерн под капотом thread-pool'ов, логгеров, очередей задач. На…"
+      "title": {
+        "en": "ArrayList vs LinkedList — which to choose and why",
+        "ru": "ArrayList vs LinkedList — какой выбрать и почему"
+      },
+      "desc": {
+        "en": "A classic Java interview question. Most people remember \"ArrayList is backed by an array, LinkedList by references\" — but flounder on \"which is…",
+        "ru": "Классический вопрос на собесе по Java. Большинство помнят «ArrayList на массиве, LinkedList на ссылках» — но плывут на «а что быстрее и почему»…"
+      }
     },
     {
       "slug": "binary-heap-priority-queue",
-      "title": "Бинарная куча и PriorityQueue",
-      "desc": "Как устроена `PriorityQueue` внутри и почему add/poll — O(log n). Движок за Dijkstra, top-K, k-way merge и планировщиками. На собесе спрашивают про…"
+      "title": {
+        "en": "Binary heap and PriorityQueue",
+        "ru": "Бинарная куча и PriorityQueue"
+      },
+      "desc": {
+        "en": "How `PriorityQueue` works internally and why add/poll are O(log n). The engine behind Dijkstra, top-K, k-way merge, and schedulers. In interviews…",
+        "ru": "Как устроена `PriorityQueue` внутри и почему add/poll — O(log n). Движок за Dijkstra, top-K, k-way merge и планировщиками. На собесе спрашивают про…"
+      }
+    },
+    {
+      "slug": "dependency-injection-ioc",
+      "title": {
+        "en": "Dependency Injection, IoC, and how Spring does it",
+        "ru": "Dependency Injection, IoC и как это делает Spring"
+      },
+      "desc": {
+        "en": "What Spring does \"magically\" under `@Component`/`@Autowired`. Understanding DI/IoC/singleton + reflection = understanding the core of Spring. In a…",
+        "ru": "Что Spring делает «магически» под `@Component`/`@Autowired`. Понять DI/IoC/singleton + рефлексию = понять ядро Spring. На собесе по Spring это вопрос…"
+      }
     },
     {
       "slug": "hashmap-internals",
-      "title": "Как устроен HashMap внутри",
-      "desc": "Разбор для тех, кто пользуется `HashMap` каждый день, но не знает, что у него под капотом. После статьи сможешь ответить на любой вопрос про корзины…"
+      "title": {
+        "en": "How HashMap Works Internally",
+        "ru": "Как устроен HashMap внутри"
+      },
+      "desc": {
+        "en": "A breakdown for people who use `HashMap` every day but don't know what's under the hood. After this you'll be able to answer any question about…",
+        "ru": "Разбор для тех, кто пользуется `HashMap` каждый день, но не знает, что у него под капотом. После статьи сможешь ответить на любой вопрос про корзины…"
+      }
+    },
+    {
+      "slug": "lru-cache",
+      "title": {
+        "en": "LRU cache — O(1) get/put with eviction",
+        "ru": "LRU-кэш — O(1) get/put с выселением"
+      },
+      "desc": {
+        "en": "\"Design an LRU cache\" is a direct interview question (LeetCode 146). It tests whether you can combine two data structures so that both operations are…",
+        "ru": "«Спроектируй LRU-кэш» — прямой вопрос на собесе (LeetCode 146). Проверяет, умеешь ли ты скомбинировать две структуры так, чтобы обе операции были…"
+      }
+    },
+    {
+      "slug": "producer-consumer-blocking-queue",
+      "title": {
+        "en": "Producer–consumer and the blocking queue",
+        "ru": "Producer–consumer и блокирующая очередь"
+      },
+      "desc": {
+        "en": "How threads **coordinate** via `wait`/`notify` (rather than just protecting data). The pattern under the hood of thread pools, loggers, and task…",
+        "ru": "Как потоки **координируются** через `wait`/`notify` (а не просто защищают данные). Паттерн под капотом thread-pool'ов, логгеров, очередей задач. На…"
+      }
     },
     {
       "slug": "ring-buffer-queue",
-      "title": "Кольцевой буфер — очередь на массиве без сдвигов",
-      "desc": "Как сделать FIFO-очередь на массиве, чтобы и `enqueue`, и `dequeue` были O(1). Наивный вариант со сдвигом элементов — O(n) и сразу выдаёт junior…"
-    },
-    {
-      "slug": "thread-safety-race-conditions",
-      "title": "Потокобезопасность и race conditions",
-      "desc": "Фундамент конкурентности на одном примере — счётчике. Если поймёшь, почему `count++` ломается под потоками и три способа это починить (synchronized /…"
-    },
-    {
-      "slug": "generic-arrays",
-      "title": "Почему `new T[]` в Java запрещён",
-      "desc": "Маленький, но цепляющий вопрос: «создай generic-массив» — и junior пишет `new T[n]`, получает ошибку компиляции и плывёт. Ответ показывает, что ты…"
+      "title": {
+        "en": "Ring buffer — an array-backed queue without shifts",
+        "ru": "Кольцевой буфер — очередь на массиве без сдвигов"
+      },
+      "desc": {
+        "en": "How to build a FIFO queue on an array so that both `enqueue` and `dequeue` are O(1). The naive version that shifts elements is O(n) and immediately…",
+        "ru": "Как сделать FIFO-очередь на массиве, чтобы и `enqueue`, и `dequeue` были O(1). Наивный вариант со сдвигом элементов — O(n) и сразу выдаёт junior…"
+      }
     },
     {
       "slug": "thread-pool",
-      "title": "Пул потоков (ThreadPool / ExecutorService)",
-      "desc": "Почему в проде не делают `new Thread()` на каждую задачу, и как устроен пул внутри. Под капотом любого веб-сервера, `@Async`, parallel-обработки. На…"
+      "title": {
+        "en": "Thread pool (ThreadPool / ExecutorService)",
+        "ru": "Пул потоков (ThreadPool / ExecutorService)"
+      },
+      "desc": {
+        "en": "Why in production you don't do `new Thread()` per task, and how a pool works internally. Under the hood of any web server, `@Async`, and parallel…",
+        "ru": "Почему в проде не делают `new Thread()` на каждую задачу, и как устроен пул внутри. Под капотом любого веб-сервера, `@Async`, parallel-обработки. На…"
+      }
+    },
+    {
+      "slug": "thread-safety-race-conditions",
+      "title": {
+        "en": "Thread safety and race conditions",
+        "ru": "Потокобезопасность и race conditions"
+      },
+      "desc": {
+        "en": "The foundation of concurrency on a single example — a counter. If you understand why `count++` breaks under threads and the three ways to fix it…",
+        "ru": "Фундамент конкурентности на одном примере — счётчике. Если поймёшь, почему `count++` ломается под потоками и три способа это починить (synchronized /…"
+      }
+    },
+    {
+      "slug": "generic-arrays",
+      "title": {
+        "en": "Why `new T[]` is forbidden in Java",
+        "ru": "Почему `new T[]` в Java запрещён"
+      },
+      "desc": {
+        "en": "A small but catchy question: \"create a generic array\" — and a junior writes `new T[n]`, gets a compile error, and flounders. The answer shows you…",
+        "ru": "Маленький, но цепляющий вопрос: «создай generic-массив» — и junior пишет `new T[n]`, получает ошибку компиляции и плывёт. Ответ показывает, что ты…"
+      }
     }
   ],
   "visualizations": [

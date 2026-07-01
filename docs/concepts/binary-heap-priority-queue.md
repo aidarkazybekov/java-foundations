@@ -1,17 +1,17 @@
 
-# Бинарная куча и PriorityQueue
+# Binary heap and PriorityQueue
 
-> Как устроена `PriorityQueue` внутри и почему add/poll — O(log n). Движок за Dijkstra, top-K, k-way merge и планировщиками. На собесе спрашивают про sift-up/down и про то, как дерево живёт в массиве.
+> How `PriorityQueue` works internally and why add/poll are O(log n). The engine behind Dijkstra, top-K, k-way merge, and schedulers. In interviews they ask about sift-up/down and how a tree lives inside an array.
 
-Связано: arraylist-vs-linkedlist (массив как хранилище).
+Related: arraylist-vs-linkedlist (an array as storage).
 
 ---
 
-## Что это
+## What it is
 
-Обычная очередь — FIFO. **Priority queue** всегда отдаёт **минимальный** (или максимальный) элемент, независимо от порядка вставки. Реализация — **бинарная куча**: полное бинарное дерево, хранящееся в массиве.
+A regular queue is FIFO. A **priority queue** always hands back the **minimum** (or maximum) element, regardless of insertion order. The implementation is a **binary heap**: a complete binary tree stored in an array.
 
-**Инвариант (min-heap):** каждый родитель ≤ своих детей ⇒ минимум всегда в корне. Куча **не** полностью отсортирована — между братьями порядка нет.
+**Invariant (min-heap):** every parent ≤ its children ⇒ the minimum is always at the root. The heap is **not** fully sorted — there's no order between siblings.
 
 ```
         1
@@ -23,61 +23,61 @@
 
 ---
 
-## Дерево живёт в массиве (без указателей)
+## The tree lives in an array (no pointers)
 
-Полное дерево раскладывается по уровням в массив без дыр, связи — арифметикой. Для индекса `i`:
-
-```
-родитель  = (i - 1) / 2
-левый     = 2i + 1
-правый    = 2i + 2
-```
+A complete tree lays out by levels into an array with no gaps; the links are arithmetic. For index `i`:
 
 ```
-дерево:  1   3 2   7 5 4
-индекс:  0   1 2   3 4 5
+parent = (i - 1) / 2
+left   = 2i + 1
+right  = 2i + 2
 ```
 
-Узел `i=1` (значение 3): дети `2·1+1=3` (7) и `2·1+2=4` (5). Сходится с деревом.
+```
+tree:   1   3 2   7 5 4
+index:  0   1 2   3 4 5
+```
+
+Node `i=1` (value 3): children `2·1+1=3` (7) and `2·1+2=4` (5). Matches the tree.
 
 ---
 
-## Операции — O(log n) (высота дерева)
+## Operations — O(log n) (the tree's height)
 
-**add → sift-up (всплывание):** кладём в конец массива, затем пока меньше родителя — меняемся с ним и поднимаемся.
-
-```
-пока i > 0 и heap[i] < heap[(i-1)/2]:
-    swap(i, родитель);  i = родитель
-```
-
-**poll → sift-down (утопание):** ответ = корень. Переносим **последний** элемент в корень, отрезаем конец, и топим его вниз:
+**add → sift-up (bubble up):** put it at the end of the array, then while it's less than its parent — swap with it and rise.
 
 ```
-повторять:
+while i > 0 and heap[i] < heap[(i-1)/2]:
+    swap(i, parent);  i = parent
+```
+
+**poll → sift-down (sink):** the answer = the root. Move the **last** element to the root, cut off the end, and sink it down:
+
+```
+repeat:
     l = 2i+1, r = 2i+2, smallest = i
-    если l < size и heap[l] < heap[smallest]: smallest = l
-    если r < size и heap[r] < heap[smallest]: smallest = r
-    если smallest == i: стоп
+    if l < size and heap[l] < heap[smallest]: smallest = l
+    if r < size and heap[r] < heap[smallest]: smallest = r
+    if smallest == i: stop
     swap(i, smallest);  i = smallest
 ```
 
-**peek → `heap[0]`** за O(1).
+**peek → `heap[0]`** in O(1).
 
 ---
 
-## Ловушки (middle-уровень)
+## Traps (middle level)
 
-- **sift-down меняется с МЕНЬШИМ из детей.** Если поменяться с бо́льшим — нарушишь инвариант со вторым ребёнком.
-- **Проверяй границы:** `l < size`, `r < size` (у узла может не быть детей).
-- **heapify за O(n):** построить кучу из готового массива «снизу вверх» дешевле, чем n вставок по O(log n) = O(n log n).
-- **top-K за O(n log K):** держи min-heap размера K, выкидывай корень, когда приходит больший.
+- **sift-down swaps with the SMALLER of the children.** If you swap with the larger one — you break the invariant with the other child.
+- **Check the bounds:** `l < size`, `r < size` (a node may have no children).
+- **heapify in O(n):** building a heap from a ready array "bottom-up" is cheaper than n insertions at O(log n) = O(n log n).
+- **top-K in O(n log K):** keep a min-heap of size K, drop the root when a larger element arrives.
 
-## Interview-traps
+## Interview traps
 
-- «Как реализована PriorityQueue?» → бинарная куча в массиве; add/poll O(log n), peek O(1).
-- «Почему массив, а не узлы?» → полное дерево = массив без дыр, связи по индексам, cache-friendly.
-- «Куча отсортирована?» → нет, только родитель ≤ дети; отсортирован лишь путь к корню.
+- "How is PriorityQueue implemented?" → a binary heap in an array; add/poll O(log n), peek O(1).
+- "Why an array and not nodes?" → a complete tree = an array with no gaps, links by indices, cache-friendly.
+- "Is a heap sorted?" → no, only parent ≤ children; only the path to the root is sorted.
 
 ## Connected
 
@@ -85,6 +85,6 @@
 - arraylist-vs-linkedlist
 - hashmap-internals
 
-## Где встречалось
+## Where it appeared
 
-Реализовано в `java-foundations` (kata MyPriorityQueue): min-heap поверх своего ArrayList, `less`/`swap`, проверено стресс-тестом на 500 случайных чисел.
+Implemented in `java-foundations` (kata MyPriorityQueue): a min-heap on top of a custom ArrayList, `less`/`swap`, verified with a stress test on 500 random numbers.

@@ -1,76 +1,76 @@
 
-# Dependency Injection, IoC и как это делает Spring
+# Dependency Injection, IoC, and how Spring does it
 
-> Что Spring делает «магически» под `@Component`/`@Autowired`. Понять DI/IoC/singleton + рефлексию = понять ядро Spring. На собесе по Spring это вопрос №1.
+> What Spring does "magically" under `@Component`/`@Autowired`. Understanding DI/IoC/singleton + reflection = understanding the core of Spring. In a Spring interview this is question #1.
 
-Связано: hashmap-internals (кэш бинов), Java-Class-Initialization-Thread-Safety (синглтоны).
+Related: hashmap-internals (the bean cache), Java-Class-Initialization-Thread-Safety (singletons).
 
 ---
 
-## Зависимость
+## Dependency
 
-Если класс A использует класс B — B это **зависимость** A. Главный вопрос: **кто создаёт B?**
+If class A uses class B — B is a **dependency** of A. The key question: **who creates B?**
 
-- **Без DI:** A сам делает `new B()` внутри → жёсткая связанность, нельзя подменить (мок в тесте, другая реализация), тяжело тестировать.
-- **С DI:** B **дают** A снаружи → слабая связанность, тестируемость, проводка в одном месте.
+- **Without DI:** A itself does `new B()` inside → tight coupling, you can't substitute it (a mock in a test, another implementation), hard to test.
+- **With DI:** B is **given** to A from the outside → loose coupling, testability, wiring in one place.
 
 ```java
 class UserService {
     private final UserRepository repo;
-    UserService(UserRepository repo) { this.repo = repo; }  // зависимость приходит снаружи
+    UserService(UserRepository repo) { this.repo = repo; }  // the dependency comes from outside
 }
 ```
 
-## Три вида инъекции
+## Three kinds of injection
 
-1. **Конструкторная (✅):** через параметры конструктора. Объект сразу валиден; поля `final`; нельзя забыть зависимость (не скомпилируется); все зависимости видны.
-2. **Сеттерная:** через сеттеры — объект может быть полусобран (null), не final.
-3. **Field (`@Autowired` на поле):** удобно, но нельзя final, прячет зависимости, не тестируется без контейнера. Плохая практика.
+1. **Constructor (✅):** via constructor parameters. The object is immediately valid; fields are `final`; you can't forget a dependency (it won't compile); all dependencies are visible.
+2. **Setter:** via setters — the object may be half-built (null), not final.
+3. **Field (`@Autowired` on a field):** convenient, but you can't make it final, it hides dependencies, and it isn't testable without the container. Bad practice.
 
 ## IoC (Inversion of Control)
 
-«Контроль» = кто создаёт объекты и в каком порядке. Обычно — твой `main`. При IoC — **контейнер**: ты объявляешь классы, он сам строит граф. Принцип Голливуда: «не звоните нам — мы позвоним вам».
+"Control" = who creates objects and in what order. Usually — your `main`. With IoC — the **container**: you declare the classes, it builds the graph itself. The Hollywood principle: "don't call us — we'll call you".
 
-**DI ⊂ IoC:** DI — частный случай IoC (инвертируется конкретно создание/поставка зависимостей).
+**DI ⊂ IoC:** DI is a special case of IoC (specifically the creation/supply of dependencies is inverted).
 
-## Singleton (контейнерный скоуп)
+## Singleton (a container scope)
 
-Контейнер создаёт **один** экземпляр типа и переиспользует для всех (кэширует по типу). `resolve(X)` дважды → **тот же** объект (`a == b`). Класс при этом обычный (не GoF-паттерн со `static`) → остаётся тестируемым. Дефолтный скоуп Spring.
+The container creates **one** instance of a type and reuses it for everyone (cached by type). `resolve(X)` twice → the **same** object (`a == b`). The class itself is ordinary (not the GoF pattern with `static`) → it stays testable. Spring's default scope.
 
-🔑 Синглтон с **изменяемым** состоянием + многопоточность = race condition (thread-safety-race-conditions). Поэтому Spring-бины обычно **stateless**.
+🔑 A singleton with **mutable** state + multithreading = a race condition (thread-safety-race-conditions). That's why Spring beans are usually **stateless**.
 
-## Как контейнер строит объект — рефлексия
+## How the container builds an object — reflection
 
-Контейнер не знает твои классы заранее → создаёт их в рантайме через **Reflection API**:
-- `type.getConstructors()[0]` — конструктор;
-- `constructor.getParameterTypes()` — типы-зависимости;
-- `constructor.newInstance(deps...)` — создать экземпляр.
+The container doesn't know your classes in advance → it creates them at runtime via the **Reflection API**:
+- `type.getConstructors()[0]` — the constructor;
+- `constructor.getParameterTypes()` — the dependency types;
+- `constructor.newInstance(deps...)` — create the instance.
 
-Алгоритм `resolve` (рекурсивный, с кэшем-синглтоном):
+The `resolve` algorithm (recursive, with a singleton cache):
 ```
 resolve(type):
-  если в кэше → вернуть
+  if in cache → return
   ctor = type.getConstructors()[0]
-  deps = [ resolve(p) для каждого p из ctor.getParameterTypes() ]   // рекурсия
+  deps = [ resolve(p) for each p in ctor.getParameterTypes() ]   // recursion
   instance = ctor.newInstance(deps)
-  кэш[type] = instance; вернуть
+  cache[type] = instance; return
 ```
-База рекурсии — конструктор без аргументов. Reflection-исключения (`ReflectiveOperationException`) заворачивают в `RuntimeException`.
+The recursion's base case is a no-argument constructor. Reflection exceptions (`ReflectiveOperationException`) are wrapped in a `RuntimeException`.
 
-## Грабли
+## Pitfalls
 
-- **Циклическая зависимость** (A↔B) → бесконечная рекурсия / StackOverflow. Spring детектит (или решает через setter/proxy).
-- **Несколько конструкторов** → нужно выбрать (аннотация/единственный).
-- **Интерфейсы** → нужна привязка интерфейс→реализация (регистрация бинов).
-- Рефлексия медленнее прямого вызова → место фреймворков, не горячих циклов.
+- **Circular dependency** (A↔B) → infinite recursion / StackOverflow. Spring detects it (or resolves it via setter/proxy).
+- **Multiple constructors** → you need to pick one (an annotation/the only one).
+- **Interfaces** → you need an interface→implementation binding (bean registration).
+- Reflection is slower than a direct call → the domain of frameworks, not hot loops.
 
-## Interview-traps
+## Interview traps
 
-- «DI vs IoC?» → IoC — принцип, DI — его частный случай (поставка зависимостей).
-- «Почему конструкторная инъекция лучше field?» → final, виден контракт, тестируемость, нет полусобранных объектов.
-- «Spring-бин singleton — потокобезопасен?» → только если stateless; mutable-состояние → гонка.
-- «Как Spring создаёт бины?» → рефлексия: читает конструктор, рекурсивно строит зависимости, newInstance.
-- «Циклическая зависимость?» → Spring её обнаруживает; конструкторный цикл не разрешим без proxy.
+- "DI vs IoC?" → IoC is the principle, DI is its special case (supplying dependencies).
+- "Why is constructor injection better than field?" → final, the contract is visible, testability, no half-built objects.
+- "Is a singleton Spring bean thread-safe?" → only if stateless; mutable state → a race.
+- "How does Spring create beans?" → reflection: reads the constructor, recursively builds the dependencies, newInstance.
+- "Circular dependency?" → Spring detects it; a constructor cycle isn't resolvable without a proxy.
 
 ## Connected
 
@@ -78,6 +78,6 @@ resolve(type):
 - hashmap-internals
 - generic-arrays
 
-## Где встречалось
+## Where it appeared
 
-`java-foundations` kata #11: `MyContainer` — constructor-injection IoC-контейнер на рефлексии, рекурсивное разрешение, singleton-кэш в собственном `MyHashMap`. Завершающая ката (мостик к Spring).
+`java-foundations` kata #11: `MyContainer` — a constructor-injection IoC container built on reflection, recursive resolution, a singleton cache in a custom `MyHashMap`. The final kata (a bridge to Spring).

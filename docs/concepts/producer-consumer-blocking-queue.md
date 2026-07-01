@@ -1,48 +1,48 @@
 
-# Producer–consumer и блокирующая очередь
+# Producer–consumer and the blocking queue
 
-> Как потоки **координируются** через `wait`/`notify` (а не просто защищают данные). Паттерн под капотом thread-pool'ов, логгеров, очередей задач. На собесе проверяет, понимаешь ли межпоточную сигнализацию и почему `while`+`notifyAll`.
+> How threads **coordinate** via `wait`/`notify` (rather than just protecting data). The pattern under the hood of thread pools, loggers, and task queues. In interviews it tests whether you understand inter-thread signaling and why `while`+`notifyAll`.
 
-Связано: thread-safety-race-conditions, ring-buffer-queue (буфер внутри).
+Related: thread-safety-race-conditions, ring-buffer-queue (the buffer inside).
 
 ---
 
-## Паттерн
+## The pattern
 
-Два сорта потоков работают с разной скоростью:
-- **производители** кладут элементы в общий буфер;
-- **потребители** забирают и обрабатывают.
+Two kinds of threads work at different speeds:
+- **producers** put items into a shared buffer;
+- **consumers** take and process them.
 
-Буфер их **развязывает** — производитель не ждёт обработки каждого элемента. Буфер **ограничен** (bounded) → backpressure: нельзя расти бесконечно.
+The buffer **decouples** them — a producer doesn't wait for each item to be processed. The buffer is **bounded** → backpressure: it can't grow indefinitely.
 
-Из ограниченности — два условия ожидания:
-- буфер **полон** → производитель ждёт места;
-- буфер **пуст** → потребитель ждёт элемента.
+From the boundedness come two wait conditions:
+- buffer is **full** → the producer waits for space;
+- buffer is **empty** → the consumer waits for an item.
 
-Busy-wait (`while(full){}`) сжигает CPU. Нужно усыпить поток и разбудить по событию → `wait`/`notify`.
+Busy-wait (`while(full){}`) burns CPU. You need to put the thread to sleep and wake it on an event → `wait`/`notify`.
 
 ---
 
 ## wait / notify
 
-У каждого объекта, кроме замка, есть «комната ожидания» (wait-set):
-- `lock.wait()` (держа замок): **отпускает замок** и засыпает. Отпускает — чтобы другой смог изменить условие.
-- `lock.notify()` / `notifyAll()`: будит одного / всех; разбуженный заново берёт замок.
-- Только внутри `synchronized(lock)`.
+Every object, besides a lock, has a "waiting room" (wait-set):
+- `lock.wait()` (holding the lock): **releases the lock** and sleeps. It releases so that another thread can change the condition.
+- `lock.notify()` / `notifyAll()`: wakes one / all; the woken thread re-acquires the lock.
+- Only inside `synchronized(lock)`.
 
 ```java
 public void put(E e) throws InterruptedException {
     synchronized (lock) {
-        while (queue.size() == capacity) lock.wait();  // полно → ждём
+        while (queue.size() == capacity) lock.wait();  // full → wait
         queue.enqueue(e);
-        lock.notifyAll();                              // будим потребителей
+        lock.notifyAll();                              // wake consumers
     }
 }
 public E take() throws InterruptedException {
     synchronized (lock) {
-        while (queue.isEmpty()) lock.wait();           // пусто → ждём
+        while (queue.isEmpty()) lock.wait();           // empty → wait
         E e = queue.dequeue();
-        lock.notifyAll();                             // будим производителей
+        lock.notifyAll();                             // wake producers
         return e;
     }
 }
@@ -50,39 +50,39 @@ public E take() throws InterruptedException {
 
 ---
 
-## Три грабли (классика собеса)
+## Three pitfalls (interview classics)
 
-1. **`while`, а НЕ `if`** вокруг `wait()`. Причины: (а) **spurious wakeup** — JVM может разбудить без notify; (б) пока разбуженный заново брал замок, другой поток мог забрать слот → надо **перепроверить** условие.
-2. **`notifyAll`, а НЕ `notify`.** На одном замке висят и producers, и consumers. `notify` будит случайного одного — может разбудить «не того» → missed signal / deadlock. `notifyAll` безопаснее.
-3. **`wait()` отпускает замок, `sleep()` — нет.** `sleep` спит, держа замок (блокирует всех); `wait` отдаёт замок.
-
----
-
-## Как остановить потребителей (poison pill)
-
-`take()` на пустой блокируется навсегда. Чтобы завершить потребителей корректно — **poison pill**: спец-маркер в очереди, увидев который потребитель выходит. Кладут **по одной таблетке на каждого** потребителя, **после** того как все производители закончили (FIFO → таблетки в хвосте, реальные элементы разберутся первыми).
-
-Тестируют так: N элементов через P producers / C consumers, атомарный счётчик забранного, в конце `count == N` (ничего не потеряно/не задублировано).
+1. **`while`, and NOT `if`** around `wait()`. Reasons: (a) **spurious wakeup** — the JVM may wake a thread without a notify; (b) while the woken thread was re-acquiring the lock, another thread could have taken the slot → you must **re-check** the condition.
+2. **`notifyAll`, and NOT `notify`.** Both producers and consumers wait on the same lock. `notify` wakes a random one — it may wake "the wrong one" → missed signal / deadlock. `notifyAll` is safer.
+3. **`wait()` releases the lock, `sleep()` doesn't.** `sleep` sleeps while holding the lock (blocking everyone); `wait` gives up the lock.
 
 ---
 
-## Современные альтернативы
+## How to stop consumers (poison pill)
 
-- `java.util.concurrent.ArrayBlockingQueue` / `LinkedBlockingQueue` — готовые блокирующие очереди (в проде берут их).
-- `Lock` + `Condition` (`await`/`signal`) — точнее wait/notify: можно завести **две** комнаты ожидания (`notFull`, `notEmpty`) и будить только нужную сторону вместо `notifyAll` всех.
+`take()` on an empty queue blocks forever. To finish consumers cleanly — a **poison pill**: a special marker in the queue, upon seeing which a consumer exits. Put in **one pill per consumer**, **after** all producers have finished (FIFO → the pills are at the tail, real items are consumed first).
 
-## Interview-traps
+You test it like this: N items through P producers / C consumers, an atomic counter of what's been taken, at the end `count == N` (nothing lost/duplicated).
 
-- «Почему `while`, не `if`?» → spurious wakeup + перепроверка условия.
-- «`notify` или `notifyAll`?» → notifyAll, когда на замке разные роли ждут одно событие.
-- «`wait` vs `sleep`?» → wait отдаёт замок, sleep — нет.
-- «Чем Lock+Condition лучше?» → отдельные условия → нет лишних пробуждений.
+---
+
+## Modern alternatives
+
+- `java.util.concurrent.ArrayBlockingQueue` / `LinkedBlockingQueue` — ready-made blocking queues (in production you use these).
+- `Lock` + `Condition` (`await`/`signal`) — more precise than wait/notify: you can set up **two** waiting rooms (`notFull`, `notEmpty`) and wake only the needed side instead of `notifyAll` on everyone.
+
+## Interview traps
+
+- "Why `while`, not `if`?" → spurious wakeup + condition re-check.
+- "`notify` or `notifyAll`?" → notifyAll, when different roles on the lock wait for the same event.
+- "`wait` vs `sleep`?" → wait gives up the lock, sleep doesn't.
+- "Why is Lock+Condition better?" → separate conditions → no unnecessary wakeups.
 
 ## Connected
 
 - thread-safety-race-conditions
 - ring-buffer-queue
 
-## Где встречалось
+## Where it appeared
 
-`java-foundations` kata #9: `MyBlockingQueue<E>` поверх `MyQueue` (кольцевой буфер) + `synchronized`/wait/notify; тест с 4 producers / 4 consumers и poison-pill остановкой подтверждает отсутствие потерь.
+`java-foundations` kata #9: `MyBlockingQueue<E>` on top of `MyQueue` (a ring buffer) + `synchronized`/wait/notify; a test with 4 producers / 4 consumers and poison-pill shutdown confirms no losses.

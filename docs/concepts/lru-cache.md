@@ -1,72 +1,72 @@
 
-# LRU-кэш — O(1) get/put с выселением
+# LRU cache — O(1) get/put with eviction
 
-> «Спроектируй LRU-кэш» — прямой вопрос на собесе (LeetCode 146). Проверяет, умеешь ли ты скомбинировать две структуры так, чтобы обе операции были O(1). Ответ показывает, что ты мыслишь не отдельными структурами, а их композицией под требование.
+> "Design an LRU cache" is a direct interview question (LeetCode 146). It tests whether you can combine two data structures so that both operations are O(1). The answer shows you think not in terms of individual structures but of their composition against a requirement.
 
-Связано: hashmap-internals, arraylist-vs-linkedlist (двусвязный список).
-
----
-
-## Что это
-
-Кэш ограниченной ёмкости. Когда он полон и приходит новый ключ — выселяем **least recently used** (дольше всех не использованный). Идея — temporal locality: недавнее скоро понадобится снова.
-
-Требование, которое делает задачу интересной: **и `get`, и `put` — O(1)**. Причём `get` тоже «использование» → освежает свежесть элемента.
+Related: hashmap-internals, arraylist-vs-linkedlist (doubly-linked list).
 
 ---
 
-## Почему HashMap + двусвязный список
+## What it is
 
-Нужны три вещи за O(1), и ни одна структура их в одиночку не даёт:
+A cache of bounded capacity. When it's full and a new key arrives — we evict the **least recently used** (the one untouched the longest). The idea is temporal locality: the recent will soon be needed again.
 
-| Нужно | HashMap | Двусвязный список |
+The requirement that makes the task interesting: **both `get` and `put` are O(1)**. And `get` is also a "use" → it refreshes the element's recency.
+
+---
+
+## Why HashMap + doubly-linked list
+
+We need three things in O(1), and no single structure provides them all alone:
+
+| Needed | HashMap | Doubly-linked list |
 |---|---|---|
-| найти значение по ключу | ✅ | ❌ O(n) |
-| знать порядок свежести | ❌ | ✅ |
-| подвинуть свежего в перёд / выселить старого | ❌ | ✅ (если есть ссылка на узел + `prev`) |
+| find a value by key | ✅ | ❌ O(n) |
+| know the recency order | ❌ | ✅ |
+| move the recent to the front / evict the old | ❌ | ✅ (if there's a reference to the node + `prev`) |
 
-**Комбинация:** `HashMap<K, Node>` даёт O(1) «ключ → узел», двусвязный список даёт O(1) «отвязать/переставить этот узел». Вместе — обе операции O(1).
+**The combination:** `HashMap<K, Node>` gives O(1) "key → node", the doubly-linked list gives O(1) "unlink/re-place this node". Together — both operations are O(1).
 
 ```
 HashMap:  key → ───────────┐
                             ▼
 head ⇄ (MRU) ⇄ ... ⇄ (LRU) ⇄ tail
-       перёд              хвост = кандидат на вылет
+       front              tail = eviction candidate
 ```
 
 ---
 
-## Операции
+## Operations
 
-- **get(key):** нет в map → `null`. Есть → `unlink(node)` + `addFront(node)` (освежить) → вернуть value.
+- **get(key):** not in map → `null`. Present → `unlink(node)` + `addFront(node)` (refresh) → return value.
 - **put(key, value):**
-  - ключ есть → обновить value, `unlink` + `addFront` (освежить);
-  - нет → создать узел, `map.put`, `addFront`, `size++`; если `size > capacity` → выселить `tail.prev` (LRU): `unlink` + `map.remove(lru.key)` + `size--`.
+  - key present → update value, `unlink` + `addFront` (refresh);
+  - absent → create node, `map.put`, `addFront`, `size++`; if `size > capacity` → evict `tail.prev` (LRU): `unlink` + `map.remove(lru.key)` + `size--`.
 
 ```
 cap=3
 put A,B,C : [C B A]
-get A     : [A C B]     ← A освежён, B стал LRU
-put D     : [D A C]     ← полный → вылетает B
+get A     : [A C B]     ← A refreshed, B became LRU
+put D     : [D A C]     ← full → B is evicted
 get B     : null
 ```
 
 ---
 
-## Три момента, на которых валятся
+## Three places where people fail
 
-1. **Узел хранит `key`.** При выселении хвоста надо удалить запись из `map` — ключ берёшь из узла (только value мало).
-2. **Список именно двусвязный.** Отвязать произвольный узел за O(1) можно, лишь имея `prev`. Односвязный → O(n) на поиск предыдущего.
-3. **Узлы-стражи (dummy head + tail).** У любого реального узла всегда есть оба соседа → `addFront`/`unlink` пишутся без null-проверок. Резко упрощает код.
+1. **The node stores the `key`.** When evicting the tail, you have to remove the entry from the `map` — you take the key from the node (the value alone isn't enough).
+2. **The list must be doubly-linked.** You can unlink an arbitrary node in O(1) only if you have `prev`. Singly-linked → O(n) to find the predecessor.
+3. **Sentinel nodes (dummy head + tail).** Any real node always has both neighbors → `addFront`/`unlink` are written without null checks. Dramatically simplifies the code.
 
 ---
 
-## Interview-traps
+## Interview traps
 
-- «Почему именно эти две структуры?» → map для O(1) lookup, список для O(1) reorder/eviction; по отдельности не хватает.
-- «Зачем хранить key в узле?» → чтобы удалить из map при выселении.
-- «Singly или doubly?» → doubly: O(1) unlink известного узла.
-- В Java «из коробки»: `LinkedHashMap(capacity, 0.75f, true)` + override `removeEldestEntry` = готовый LRU.
+- "Why exactly these two structures?" → map for O(1) lookup, list for O(1) reorder/eviction; individually neither is enough.
+- "Why store the key in the node?" → to remove it from the map on eviction.
+- "Singly or doubly?" → doubly: O(1) unlink of a known node.
+- Out of the box in Java: `LinkedHashMap(capacity, 0.75f, true)` + override `removeEldestEntry` = a ready-made LRU.
 
 ## Connected
 
@@ -74,6 +74,6 @@ get B     : null
 - arraylist-vs-linkedlist
 - ring-buffer-queue
 
-## Где встречалось
+## Where it appeared
 
-`java-foundations` (kata MyLRUCache): `MyHashMap<K,Node>` + свой двусвязный список со стражами, `addFront`/`unlink`, выселение `tail.prev`. Потребовало дописать `MyHashMap.remove`.
+`java-foundations` (kata MyLRUCache): `MyHashMap<K,Node>` + a custom doubly-linked list with sentinels, `addFront`/`unlink`, eviction of `tail.prev`. Required adding `MyHashMap.remove`.

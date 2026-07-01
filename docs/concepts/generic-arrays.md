@@ -1,28 +1,28 @@
 
-# Почему `new T[]` в Java запрещён
+# Why `new T[]` is forbidden in Java
 
-> Маленький, но цепляющий вопрос: «создай generic-массив» — и junior пишет `new T[n]`, получает ошибку компиляции и плывёт. Ответ показывает, что ты понимаешь разницу между reified-массивами и стёртыми (erased) дженериками.
+> A small but catchy question: "create a generic array" — and a junior writes `new T[n]`, gets a compile error, and flounders. The answer shows you understand the difference between reified arrays and erased generics.
 
-Связано: collections-list-set-map, hashmap-internals (внутри — массив корзин).
-
----
-
-## Суть
-
-`new T[10]` или `new Node<K,V>[10]` — **ошибка компиляции**. Так нельзя.
-
-Причина — конфликт двух механизмов:
-
-- **Массивы reified:** массив помнит свой тип элементов в рантайме и **проверяет** каждую запись (`ArrayStoreException`, если положишь не то).
-- **Дженерики erased:** информация о типе стирается при компиляции — в рантайме `List<String>` и `List<Integer>` это просто `List`.
-
-Generic-массив сломал бы эту проверку: рантайм-проверка прошла бы, хотя статический тип врёт. Поэтому Java запрещает создание.
+Related: collections-list-set-map, hashmap-internals (inside — an array of buckets).
 
 ---
 
-## Как обходят (идиома)
+## The gist
 
-Создают **сырой** массив и кастуют, локализуя `@SuppressWarnings` в одном месте:
+`new T[10]` or `new Node<K,V>[10]` is a **compile error**. You can't do it.
+
+The reason is a conflict between two mechanisms:
+
+- **Arrays are reified:** an array remembers its element type at runtime and **checks** every write (`ArrayStoreException` if you put in the wrong thing).
+- **Generics are erased:** type information is erased at compile time — at runtime `List<String>` and `List<Integer>` are just `List`.
+
+A generic array would break this check: the runtime check would pass even though the static type lies. That's why Java forbids the creation.
+
+---
+
+## How people work around it (the idiom)
+
+You create a **raw** array and cast, localizing `@SuppressWarnings` in one place:
 
 ```java
 @SuppressWarnings("unchecked")
@@ -31,21 +31,21 @@ private Node<K, V>[] newTable(int capacity) {
 }
 ```
 
-Безопасно, **если** массив не «утекает» наружу и хранит только `Node<K,V>`. Так делает и `ArrayList` внутри — держит `Object[]` и кастует элемент на `get`.
+It's safe **if** the array doesn't "leak" outward and holds only `Node<K,V>`. That's what `ArrayList` does internally too — it keeps an `Object[]` and casts the element on `get`.
 
 ---
 
-## Interview-traps
+## Interview traps
 
-- «Почему нельзя `new T[]`?» → массивы reified, дженерики erased; generic-массив обошёл бы рантайм-проверку записи.
-- «Как тогда хранит элементы ArrayList?» → внутри `Object[]`, каст при доступе.
-- «Зачем `@SuppressWarnings("unchecked")`?» → осознанно квитируешь unchecked-каст, который безопасен по построению.
+- "Why can't you do `new T[]`?" → arrays are reified, generics are erased; a generic array would bypass the runtime write check.
+- "How does ArrayList store elements then?" → internally an `Object[]`, cast on access.
+- "Why `@SuppressWarnings("unchecked")`?" → you consciously acknowledge an unchecked cast that is safe by construction.
 
 ## Connected
 
 - hashmap-internals
 - arraylist-vs-linkedlist
 
-## Где встречалось
+## Where it appeared
 
-`java-foundations` — массив корзин в MyHashMap и backing-массив в MyArrayList создаются через такой каст.
+`java-foundations` — the bucket array in MyHashMap and the backing array in MyArrayList are created via such a cast.

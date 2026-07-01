@@ -18,13 +18,17 @@
     var glyph = kind === 'viz' ? '▶' : '&lt;/&gt;';
     return '<div class="cover" style="background:' + bg + '"><span class="cover-glyph">' + glyph + '</span></div>';
   }
+  function pick(v, lang) {
+    return (v && typeof v === 'object') ? (v[lang] || v.en) : v;   // bilingual {en,ru} or plain string
+  }
   window.jfCardHTML = function (item, kind, lang) {
+    var title = pick(item.title, lang), desc = pick(item.desc, lang);
     var href = kind === 'viz' ? ('visualizations/' + item.file) : ('concept.html?doc=' + item.slug);
     var meta = kind === 'viz'
       ? (lang === 'ru' ? 'запустить →' : 'play →')
       : (lang === 'ru' ? 'читать →' : 'read →');
-    return '<a class="card" href="' + href + '">' + cover(item.title, kind)
-      + '<div class="card-body"><h3>' + esc(item.title) + '</h3><p>' + esc(item.desc)
+    return '<a class="card" href="' + href + '">' + cover(title, kind)
+      + '<div class="card-body"><h3>' + esc(title) + '</h3><p>' + esc(desc)
       + '</p><span class="meta">' + meta + '</span></div></a>';
   };
   window.jfLang = function () { return document.documentElement.getAttribute('data-lang') || 'en'; };

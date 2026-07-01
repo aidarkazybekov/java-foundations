@@ -1,76 +1,76 @@
 
-# Пул потоков (ThreadPool / ExecutorService)
+# Thread pool (ThreadPool / ExecutorService)
 
-> Почему в проде не делают `new Thread()` на каждую задачу, и как устроен пул внутри. Под капотом любого веб-сервера, `@Async`, parallel-обработки. На собесе — обязательный вопрос про `ExecutorService`.
+> Why in production you don't do `new Thread()` per task, and how a pool works internally. Under the hood of any web server, `@Async`, and parallel processing. In interviews — a mandatory question about `ExecutorService`.
 
-Связано: producer-consumer-blocking-queue (очередь задач), thread-safety-race-conditions.
-
----
-
-## Зачем пул
-
-Создавать поток дорого: ресурс ОС + ~1 МБ стека + работа планировщика. `new Thread()` на каждую задачу при тысячах задач → память взрывается, context switching захлёбывается, упираешься в лимиты ОС. И нет контроля над уровнем параллелизма.
-
-**Пул:** создать **фиксированное** число воркеров **один раз** и **переиспользовать** под задачи.
+Related: producer-consumer-blocking-queue (the task queue), thread-safety-race-conditions.
 
 ---
 
-## Модель
+## Why a pool
 
-Пул = **N воркеров** + **очередь задач**. Это **producer-consumer**:
-- отправитель (`submit`) = producer кладёт задачу в очередь;
-- воркеры = consumers крутят цикл: `take()` задачу → выполнить → повторить;
-- задач нет → воркеры блокируются на очереди (не busy-wait).
+Creating a thread is expensive: an OS resource + ~1 MB of stack + scheduler work. `new Thread()` per task, with thousands of tasks → memory blows up, context switching chokes, you hit OS limits. And there's no control over the level of parallelism.
+
+**The pool:** create a **fixed** number of workers **once** and **reuse** them for tasks.
+
+---
+
+## The model
+
+A pool = **N workers** + **a task queue**. This is **producer-consumer**:
+- the submitter (`submit`) = a producer puts a task into the queue;
+- the workers = consumers run a loop: `take()` a task → execute → repeat;
+- no tasks → the workers block on the queue (not busy-wait).
 
 ```java
-// воркер
+// worker
 while (true) {
-    Runnable task = queue.take();   // блокируется, если пусто
-    if (task == POISON) break;      // сигнал стоп
-    try { task.run(); }             // выполнить В ЭТОМ потоке (переиспользование!)
-    catch (RuntimeException e) { /* не убивать воркера */ }
+    Runnable task = queue.take();   // blocks if empty
+    if (task == POISON) break;      // stop signal
+    try { task.run(); }             // execute IN THIS thread (reuse!)
+    catch (RuntimeException e) { /* don't kill the worker */ }
 }
 ```
 
-🔑 `task.run()`, а НЕ `new Thread(task).start()` — задача исполняется на **существующем** воркере; в этом весь смысл пула.
+🔑 `task.run()`, and NOT `new Thread(task).start()` — the task executes on an **existing** worker; that's the whole point of a pool.
 
-**Задача = `Runnable`** (`void run()`); `submit(Runnable)` → `queue.put(task)`. (`Callable<T>` возвращает результат через `Future` — следующий уровень.)
-
----
-
-## Остановка пула
-
-Воркеры крутят вечный цикл — просто бросить нельзя (повиснут на `take()`). Два режима (как у `ExecutorService`):
-- **`shutdown()`** — graceful: не принимать новые, доделать очередь, выйти;
-- **`shutdownNow()`** — прервать сразу, бросить остаток.
-
-Graceful через **poison pill**: `shutdown()` кладёт по одной таблетке-маркеру на воркера; воркер, взяв её, выходит. FIFO → таблетки в хвосте, реальные задачи доделываются первыми. `awaitTermination()` = `join` всех воркеров.
+**A task = `Runnable`** (`void run()`); `submit(Runnable)` → `queue.put(task)`. (`Callable<T>` returns a result via `Future` — the next level.)
 
 ---
 
-## Изоляция исключений
+## Stopping the pool
 
-Если задача бросит `RuntimeException` и `run()` не обёрнут — воркер-поток **умрёт**, пул «худеет». Поэтому `task.run()` оборачивают в try/catch (настоящий `ThreadPoolExecutor` так и делает). Классический вопрос: «что будет, если задача упадёт?».
+Workers run an infinite loop — you can't just abandon them (they'd hang on `take()`). Two modes (like `ExecutorService`):
+- **`shutdown()`** — graceful: don't accept new ones, finish the queue, exit;
+- **`shutdownNow()`** — interrupt immediately, discard the rest.
+
+Graceful via a **poison pill**: `shutdown()` puts one marker pill per worker; a worker, upon taking it, exits. FIFO → the pills are at the tail, real tasks are finished first. `awaitTermination()` = `join` all workers.
 
 ---
 
-## Реальный мир: `ExecutorService`
+## Exception isolation
 
-Руками пул не пишут — `Executors.newFixedThreadPool(n)` → `ExecutorService`. Под капотом `ThreadPoolExecutor` с ручками: core/max размер, keep-alive, тип очереди (bounded/unbounded), **политика отказа** при переполнении (`AbortPolicy`/`CallerRunsPolicy`/...). `submit` возвращает `Future`.
+If a task throws a `RuntimeException` and `run()` isn't wrapped — the worker thread **dies** and the pool "thins out". That's why `task.run()` is wrapped in try/catch (the real `ThreadPoolExecutor` does exactly this). A classic question: "what happens if a task fails?".
 
-## Interview-traps
+---
 
-- «Почему не `new Thread` на запрос?» → дорого + неуправляемый параллелизм; пул переиспользует.
-- «`task.run()` или `start()` в воркере?» → `run()` (на воркере), иначе теряется смысл пула.
-- «Как корректно остановить?» → shutdown (доделать) vs shutdownNow (прервать); poison pill / interrupt.
-- «Задача кинула исключение?» → без обёртки воркер умирает; надо ловить.
-- «`submit` после `shutdown`?» → `RejectedExecutionException`.
+## The real world: `ExecutorService`
+
+You don't write a pool by hand — `Executors.newFixedThreadPool(n)` → `ExecutorService`. Under the hood a `ThreadPoolExecutor` with knobs: core/max size, keep-alive, queue type (bounded/unbounded), a **rejection policy** on overflow (`AbortPolicy`/`CallerRunsPolicy`/...). `submit` returns a `Future`.
+
+## Interview traps
+
+- "Why not `new Thread` per request?" → expensive + unmanaged parallelism; a pool reuses.
+- "`task.run()` or `start()` in a worker?" → `run()` (on the worker), otherwise the point of the pool is lost.
+- "How to stop it cleanly?" → shutdown (finish) vs shutdownNow (interrupt); poison pill / interrupt.
+- "A task threw an exception?" → without a wrapper the worker dies; you must catch it.
+- "`submit` after `shutdown`?" → `RejectedExecutionException`.
 
 ## Connected
 
 - producer-consumer-blocking-queue
 - thread-safety-race-conditions
 
-## Где встречалось
+## Where it appeared
 
-`java-foundations` kata #10: `MyThreadPool` поверх `MyBlockingQueue<Runnable>` — N воркеров, `submit`/`shutdown` (poison pills)/`awaitTermination`, try/catch вокруг `task.run()`. Тесты: все задачи выполнены; ≤ poolSize потоков (переиспользование).
+`java-foundations` kata #10: `MyThreadPool` on top of `MyBlockingQueue<Runnable>` — N workers, `submit`/`shutdown` (poison pills)/`awaitTermination`, try/catch around `task.run()`. Tests: all tasks executed; ≤ poolSize threads (reuse).

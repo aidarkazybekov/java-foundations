@@ -1,77 +1,77 @@
 
-# Кольцевой буфер — очередь на массиве без сдвигов
+# Ring buffer — an array-backed queue without shifts
 
-> Как сделать FIFO-очередь на массиве, чтобы и `enqueue`, и `dequeue` были O(1). Наивный вариант со сдвигом элементов — O(n) и сразу выдаёт junior. Кольцевой буфер — то, что лежит под `ArrayDeque`, и частый вопрос на собесе.
+> How to build a FIFO queue on an array so that both `enqueue` and `dequeue` are O(1). The naive version that shifts elements is O(n) and immediately gives away a junior. The ring buffer is what sits under `ArrayDeque`, and a frequent interview question.
 
-Связано: arraylist-vs-linkedlist (амортизированный resize массива).
-
----
-
-## Проблема наивной очереди на массиве
-
-Очередь — это FIFO: добавляем в конец, забираем из начала. Если хранить в массиве и при `dequeue` сдвигать все элементы влево — каждое снятие O(n). На большой очереди это катастрофа.
-
-Идея кольца: **массив не двигаем — двигаем указатель начала**, а индексы «заворачиваем» через `% capacity`. Освободившиеся ячейки слева переиспользуются.
+Related: arraylist-vs-linkedlist (amortized array resize).
 
 ---
 
-## Устройство
+## The problem with a naive array-backed queue
 
-Три поля: массив, `head` (индекс начала), `size`. Хвост (куда писать) **вычисляется**, его не хранят:
+A queue is FIFO: add to the end, take from the front. If you store it in an array and shift all elements left on `dequeue` — every removal is O(n). On a large queue that's a disaster.
+
+The ring idea: **don't move the array — move the start pointer**, and "wrap" indices with `% capacity`. Freed cells on the left get reused.
+
+---
+
+## Structure
+
+Three fields: the array, `head` (start index), and `size`. The tail (where to write) is **computed**, not stored:
 
 ```
-позиция записи = (head + size) % capacity
+write position = (head + size) % capacity
 ```
 
 ```
 capacity = 6,  head = 3,  size = 4
-индекс:   0    1    2    3    4    5
+index:    0    1    2    3    4    5
         ┌────┬────┬────┬────┬────┬────┐
         │ 0  │ ·  │ ·  │ 3  │ 4  │ 5  │
         └────┴────┴────┴────┴────┴────┘
           ↑              ↑
-        запись        head (начало)
-   логический порядок: 3 → 4 → 5 → 0   (завёрнут через край!)
+        write          head (start)
+   logical order: 3 → 4 → 5 → 0   (wrapped past the edge!)
 ```
 
 - **enqueue:** `array[(head + size) % capacity] = e; size++`
 - **dequeue:** `e = array[head]; array[head] = null; head = (head + 1) % capacity; size--`
 - **peek:** `array[head]`
 
-`% capacity` автоматически перекидывает индекс с конца массива в начало — отсюда «кольцо».
+`% capacity` automatically wraps the index from the end of the array back to the beginning — hence "ring".
 
 ---
 
-## Две ловушки (вот что отличает middle)
+## Two traps (this is what separates a middle)
 
-### 1. «Полно или пусто?» при `head == tail`
+### 1. "Full or empty?" when `head == tail`
 
-Если хранить только `head` и `tail`, то при их совпадении непонятно: очередь пустая или полная — оба состояния дают `head == tail`. Решения:
-- **держать `size`** (просто и без двусмысленности): `empty = size==0`, `full = size==capacity`;
-- либо жертвовать одной ячейкой (capacity−1 полезных).
+If you store only `head` and `tail`, then when they coincide it's unclear: is the queue empty or full — both states give `head == tail`. Solutions:
+- **keep `size`** (simple and unambiguous): `empty = size==0`, `full = size==capacity`;
+- or sacrifice one cell (capacity−1 usable).
 
-Первый вариант чище — поэтому хранят `size`, а не `tail`.
+The first option is cleaner — that's why you store `size` rather than `tail`.
 
-### 2. Resize, когда область завёрнута
+### 2. Resize when the region is wrapped
 
-Когда буфер полон и надо расти — **нельзя** скопировать массив как есть (`System.arraycopy` целиком): логический порядок может быть разорван через край (как `3→4→5→0` выше). Надо пройти **в логическом порядке** и переписать в новый массив с нуля:
+When the buffer is full and needs to grow — you **can't** copy the array as-is (`System.arraycopy` wholesale): the logical order may be broken across the edge (like `3→4→5→0` above). You have to walk **in logical order** and rewrite into the new array from scratch:
 
 ```
-для k от 0 до size-1:
+for k from 0 to size-1:
     newArray[k] = array[(head + k) % capacity]
 head = 0
 ```
 
-После этого порядок «распрямлён», начало в индексе 0.
+After this the order is "straightened out", with the start at index 0.
 
 ---
 
-## Interview-traps
+## Interview traps
 
-- «Очередь на массиве без O(n) dequeue?» → кольцевой буфер, двигаем head, а не элементы.
-- «Как отличить полную от пустой?» → счётчик `size` (или жертвуем ячейкой).
-- «Что особенного при resize?» → завёрнутую область копируют в логическом порядке, не блоком.
-- `% capacity` при `head` или записи — забыл, и индекс вылетает за массив.
+- "A queue on an array without O(n) dequeue?" → a ring buffer, move head, not the elements.
+- "How to distinguish full from empty?" → a `size` counter (or sacrifice a cell).
+- "What's special about resize?" → the wrapped region is copied in logical order, not as a block.
+- `% capacity` on `head` or on the write — forget it, and the index runs off the array.
 
 ## Connected
 
@@ -79,6 +79,6 @@ head = 0
 - binary-heap-priority-queue
 - hashmap-internals
 
-## Где встречалось
+## Where it appeared
 
-Реализовано в pet-проекте `java-foundations` (kata MyQueue): `(head+size)%length`, заворот, resize в логическом порядке.
+Implemented in the pet project `java-foundations` (kata MyQueue): `(head+size)%length`, wrapping, resize in logical order.
