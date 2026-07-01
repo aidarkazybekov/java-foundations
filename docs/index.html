@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>java-foundations — core Java & concurrency from scratch</title>
+<title>CoreCraft — core Java, rebuilt by hand</title>
 <meta name="description" content="Core Java data structures, concurrency primitives, and a DI container built from scratch, test-driven. Interactive visualizations + concept deep-dives.">
 <script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('jf-lang')||((navigator.language||'en').slice(0,2)==='ru'?'ru':'en');document.documentElement.setAttribute('data-lang',l);}catch(e){}})();</script>
 <link rel="stylesheet" href="style.css">
@@ -13,7 +13,14 @@
 <div class="accent-bar"></div>
 
 <div class="topbar">
-  <span class="brand"><span class="dot"></span>java-foundations</span>
+  <div style="display:flex; align-items:center; gap:1.6rem;">
+    <span class="brand"><span class="dot"></span>CoreCraft</span>
+    <nav class="topnav">
+      <a href="learn.html" data-i18n="navLearn">Learn</a>
+      <a href="play.html" data-i18n="navPlay">Play</a>
+      <a href="contribute.html" data-i18n="navContribute">Contribute</a>
+    </nav>
+  </div>
   <div style="display:flex; gap:8px;">
     <button id="lang-toggle" class="theme-toggle" onclick="toggleLang()" aria-label="switch language" style="width:auto; padding:0 12px; font-size:13px; font-weight:600;">RU</button>
     <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
@@ -21,17 +28,52 @@
 </div>
 
 <section class="hero">
-  <p class="eyebrow" data-i18n="eyebrow">// Java, from first principles</p>
-  <h1 data-i18n="heroTitle">Core Java, rebuilt by hand.</h1>
-  <p class="tagline" data-i18n="heroTagline">Data structures, concurrency primitives, and a DI container — built from scratch and test-driven, to prove how the abstractions actually work underneath.</p>
-  <div class="badges">
-    <span class="badge accent" data-i18n="badgeComponents">11 components</span>
-    <span class="badge" data-i18n="badgeTests">104 tests green</span>
-    <span class="badge">Java 21</span>
-    <span class="badge">TDD-first</span>
-    <span class="badge" data-i18n="badgeDeps">zero runtime deps</span>
+  <div class="hero-grid">
+    <div>
+      <p class="eyebrow" data-i18n="eyebrow">// Java, from first principles</p>
+      <h1 data-i18n="heroTitle">Core Java, rebuilt by hand.</h1>
+      <p class="tagline" data-i18n="heroTagline">Data structures, concurrency primitives, and a DI container — built from scratch and test-driven, to prove how the abstractions actually work underneath.</p>
+      <p class="byline"><span data-i18n="bylineBy">Built by</span> Aidar Kazybekov · <a href="https://github.com/aidarkazybekov">GitHub</a> · <a id="linkedin-link" href="https://www.linkedin.com/in/aidarkazybekov/">LinkedIn</a></p>
+      <div class="cta-row">
+        <a class="cta cta-primary" href="#viz" data-i18n="ctaViz">Explore visualizations →</a>
+        <a class="cta cta-secondary" href="https://github.com/aidarkazybekov/java-foundations" data-i18n="ctaGit">View on GitHub ↗</a>
+      </div>
+      <div class="badges">
+        <span class="badge accent" data-i18n="badgeComponents">11 components</span>
+        <span class="badge" data-i18n="badgeTests">104 tests green</span>
+        <span class="badge">Java 21</span>
+        <span class="badge" data-i18n="badgeDeps">zero runtime deps</span>
+        <a class="badge" href="https://github.com/aidarkazybekov/java-foundations/releases/tag/v1.0.0" style="color:var(--color-text-secondary)">v1.0.0</a>
+      </div>
+    </div>
+    <div class="code-card" aria-hidden="true">
+      <div class="titlebar">
+        <span class="d" style="background:#ff5f56"></span>
+        <span class="d" style="background:#ffbd2e"></span>
+        <span class="d" style="background:#27c93f"></span>
+        <span class="fname">MyHashMap.java</span>
+      </div>
+<pre><span class="tok-kw">public void</span> <span class="tok-fn">put</span>(K key, V value) {
+  <span class="tok-kw">int</span> i = <span class="tok-fn">index</span>(key);
+  <span class="tok-type">Node</span>&lt;K,V&gt; cur = table[i];
+  <span class="tok-kw">if</span> (cur == <span class="tok-kw">null</span>) {                <span class="tok-com">// empty bucket</span>
+    table[i] = <span class="tok-kw">new</span> <span class="tok-type">Node</span>&lt;&gt;(key, value);
+    size++; <span class="tok-fn">resize</span>();
+    <span class="tok-kw">return</span>;
+  }
+  <span class="tok-kw">while</span> (<span class="tok-kw">true</span>) {                  <span class="tok-com">// walk the chain</span>
+    <span class="tok-kw">if</span> (<span class="tok-fn">keysEqual</span>(cur.key, key)) {
+      cur.value = value; <span class="tok-kw">return</span>;
+    }
+    <span class="tok-kw">if</span> (cur.next == <span class="tok-kw">null</span>) {
+      cur.next = <span class="tok-kw">new</span> <span class="tok-type">Node</span>&lt;&gt;(key, value); <span class="tok-kw">break</span>;
+    }
+    cur = cur.next;
+  }
+  size++; <span class="tok-fn">resize</span>();
+}</pre>
+    </div>
   </div>
-  <div class="mono-line"><span>$ mvn test</span><span class="ok" data-i18n="monoPass">→ 104 passing</span></div>
 </section>
 
 <p class="kicker" data-i18n="kOverview">Overview</p>
@@ -64,19 +106,28 @@
   </div>
 </div>
 
-<p class="kicker" data-i18n="kPlay">Play</p>
-<h2 data-i18n="vizTitle">Interactive visualizations</h2>
-<p class="lead" data-i18n="vizLead">Open and play — each explains a structure step by step.</p>
-<div class="grid" id="viz-grid"></div>
-
-<p class="kicker" data-i18n="kLearn">Learn</p>
-<h2 data-i18n="conTitle">Concept deep-dives</h2>
-<p class="lead" data-i18n="conLead">How each piece works internally, with interview angles.</p>
-<div class="grid" id="concept-grid"></div>
+<p class="kicker" data-i18n="kExplore">Explore</p>
+<h2 data-i18n="exploreTitle">Two ways in</h2>
+<div class="entry-grid">
+  <a class="entry" href="play.html">
+    <span class="strip" style="background:linear-gradient(90deg,#6366f1,#a855f7)"></span>
+    <div class="eico">▶</div>
+    <h3 data-i18n="entryPlayT">Play</h3>
+    <p data-i18n="entryPlayD">5 interactive visualizations — ring buffer, heap, LRU, race condition, thread pool. Step through them in the browser.</p>
+    <span class="meta" data-i18n="entryPlayM">Open visualizations →</span>
+  </a>
+  <a class="entry" href="learn.html">
+    <span class="strip" style="background:linear-gradient(90deg,#0891b2,#22d3ee)"></span>
+    <div class="eico">&lt;/&gt;</div>
+    <h3 data-i18n="entryLearnT">Learn</h3>
+    <p data-i18n="entryLearnD">10 concept deep-dives — how each piece works internally, with the interview angle for each.</p>
+    <span class="meta" data-i18n="entryLearnM">Read concepts →</span>
+  </a>
+</div>
 
 <footer class="site-footer">
   <div>
-    <span class="fbrand"><span class="dot"></span>java-foundations</span>
+    <span class="fbrand"><span class="dot"></span>CoreCraft</span>
     <p class="ftag" data-i18n="ftag">Core Java building blocks, built from scratch and explained — with interactive visualizations and deep-dives.</p>
   </div>
   <div>
@@ -87,11 +138,11 @@
   </div>
   <div>
     <h4 data-i18n="fExplore">Explore</h4>
-    <a class="flink" href="visualizations/ring-buffer.html" data-i18n="fViz">Visualizations</a>
-    <a class="flink" href="concept.html?doc=hashmap-internals" data-i18n="fConcepts">Concepts</a>
+    <a class="flink" href="play.html" data-i18n="fViz">Play</a>
+    <a class="flink" href="learn.html" data-i18n="fConcepts">Learn</a>
   </div>
   <div class="footer-bottom">
-    <span>© 2026 Aidar Kazybekov</span>
+    <span>© 2026 <a href="https://www.linkedin.com/in/aidarkazybekov/" style="color:inherit">Aidar Kazybekov</a> · <a href="https://github.com/aidarkazybekov/java-foundations/releases/tag/v1.0.0" style="color:inherit">v1.0.0</a></span>
     <span data-i18n="fMade">Open source · contributions welcome</span>
   </div>
 </footer>
@@ -103,13 +154,16 @@ window.I18N = {
     heroTitle: "Core Java, rebuilt by hand.",
     heroTagline: "Data structures, concurrency primitives, and a DI container — built from scratch and test-driven, to prove how the abstractions actually work underneath.",
     badgeComponents: "11 components", badgeTests: "104 tests green", badgeDeps: "zero runtime deps", monoPass: "→ 104 passing",
+    ctaViz: "Explore visualizations →", ctaGit: "View on GitHub ↗",
+    navLearn: "Learn", navPlay: "Play", navContribute: "Contribute", bylineBy: "Built by",
     kOverview: "Overview", whatTitle: "What this is",
     whatLead: "Not a library to use — a proof of understanding. The set builds on itself: the LRU cache reuses the hand-written HashMap and linked list, the thread pool runs on the blocking queue, and the DI container caches its singletons in the HashMap.",
     colData: "Data structures", colConc: "Concurrency", colFw: "Framework",
-    kPlay: "Play", vizTitle: "Interactive visualizations", vizLead: "Open and play — each explains a structure step by step.",
-    kLearn: "Learn", conTitle: "Concept deep-dives", conLead: "How each piece works internally, with interview angles.",
+    kExplore: "Explore", exploreTitle: "Two ways in",
+    entryPlayT: "Play", entryPlayD: "5 interactive visualizations — ring buffer, heap, LRU, race condition, thread pool. Step through them in the browser.", entryPlayM: "Open visualizations →",
+    entryLearnT: "Learn", entryLearnD: "10 concept deep-dives — how each piece works internally, with the interview angle for each.", entryLearnM: "Read concepts →",
     ftag: "Core Java building blocks, built from scratch and explained — with interactive visualizations and deep-dives.",
-    fProject: "Project", fContribute: "Contribute ↗", fExplore: "Explore", fViz: "Visualizations", fConcepts: "Concepts",
+    fProject: "Project", fContribute: "Contribute ↗", fExplore: "Explore", fViz: "Play", fConcepts: "Learn",
     fMade: "Open source · contributions welcome"
   },
   ru: {
@@ -117,34 +171,19 @@ window.I18N = {
     heroTitle: "Core Java, собранный руками.",
     heroTagline: "Структуры данных, примитивы конкурентности и DI-контейнер — с нуля и через тесты, чтобы понять, как абстракции работают изнутри.",
     badgeComponents: "11 компонентов", badgeTests: "104 теста зелёные", badgeDeps: "без зависимостей", monoPass: "→ 104 проходят",
+    ctaViz: "Смотреть визуализации →", ctaGit: "Открыть на GitHub ↗",
+    navLearn: "Изучить", navPlay: "Играть", navContribute: "Внести вклад", bylineBy: "Автор:",
     kOverview: "Обзор", whatTitle: "Что это",
     whatLead: "Не библиотека для использования — доказательство понимания. Набор опирается на себя: LRU-кэш использует написанные руками HashMap и связный список, пул потоков работает на блокирующей очереди, а DI-контейнер кэширует синглтоны в HashMap.",
     colData: "Структуры данных", colConc: "Конкурентность", colFw: "Фреймворк",
-    kPlay: "Поиграть", vizTitle: "Интерактивные визуализации", vizLead: "Открой и поиграй — каждая объясняет структуру по шагам.",
-    kLearn: "Изучить", conTitle: "Разбор концептов", conLead: "Как каждая часть устроена изнутри, с углом для собеседования.",
+    kExplore: "Обзор", exploreTitle: "Два входа",
+    entryPlayT: "Играть", entryPlayD: "5 интерактивных визуализаций — кольцевой буфер, куча, LRU, race condition, пул потоков. Прокликай в браузере.", entryPlayM: "Открыть визуализации →",
+    entryLearnT: "Изучить", entryLearnD: "10 разборов концептов — как каждая часть устроена изнутри, с углом для собеседования.", entryLearnM: "Читать концепты →",
     ftag: "Базовые блоки Java, собранные с нуля и объяснённые — с интерактивными визуализациями и разборами.",
-    fProject: "Проект", fContribute: "Внести вклад ↗", fExplore: "Навигация", fViz: "Визуализации", fConcepts: "Концепты",
+    fProject: "Проект", fContribute: "Внести вклад ↗", fExplore: "Навигация", fViz: "Играть", fConcepts: "Изучить",
     fMade: "Open source · вклад приветствуется"
   }
 };
-
-var CONTENT = null;
-function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-function cardHTML(href, title, desc, meta){
-  return '<a class="card" href="' + href + '"><h3>' + esc(title) + '</h3><p>' + esc(desc) + '</p><span class="meta">' + meta + '</span></a>';
-}
-function renderCards(){
-  if(!CONTENT) return;
-  var lang = document.documentElement.getAttribute('data-lang') || 'en';
-  var playLabel = lang === 'ru' ? 'запустить →' : 'play →';
-  var readLabel = lang === 'ru' ? 'читать →' : 'read →';
-  document.getElementById('viz-grid').innerHTML =
-    CONTENT.visualizations.map(function(v){ return cardHTML('visualizations/' + v.file, v.title, v.desc, playLabel); }).join('');
-  document.getElementById('concept-grid').innerHTML =
-    CONTENT.concepts.map(function(c){ return cardHTML('concept.html?doc=' + c.slug, c.title, c.desc, readLabel); }).join('');
-}
-window.onLangChange = renderCards;
-fetch('content.json').then(function(r){ return r.json(); }).then(function(d){ CONTENT = d; renderCards(); });
 </script>
 <script src="theme.js"></script>
 <script src="lang.js"></script>

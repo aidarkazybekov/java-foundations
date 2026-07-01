@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Concept — java-foundations</title>
+<title>Concept — CoreCraft</title>
 <script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="topbar">
-  <a class="brand" href="index.html"><span class="dot"></span>← java-foundations</a>
+  <a class="brand" href="index.html"><span class="dot"></span>← CoreCraft</a>
   <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
 </div>
 
@@ -28,7 +28,7 @@
     .then(function (md) {
       el.innerHTML = marked.parse(md);
       var h1 = el.querySelector('h1');
-      document.title = (h1 ? h1.textContent : doc) + ' — java-foundations';
+      document.title = (h1 ? h1.textContent : doc) + ' — CoreCraft';
     })
     .catch(function () {
       el.innerHTML = '<p>Не удалось загрузить концепт «' + doc + '». '

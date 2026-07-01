@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contribute — CoreCraft</title>
+<script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="index.html"><span class="dot"></span>← CoreCraft</a>
+  <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
+</div>
+
+<article class="article">
+<h1>Contribute</h1>
+<p><strong>CoreCraft</strong> is a growing, open collection of core Java building blocks
+explained from scratch. New <strong>concepts</strong> and <strong>interactive
+visualizations</strong> are welcome — drop a file, open a PR, and it appears on this site
+<strong>automatically</strong>. No manual index editing.</p>
+
+<h2>How auto-discovery works</h2>
+<p>A CI step (<code>docs/gen-manifest.mjs</code>) scans <code>docs/concepts/</code> and
+<code>docs/visualizations/</code>, extracts each item's title and one-line description, and
+regenerates <code>docs/content.json</code>. The landing page renders its cards from that
+manifest — so <strong>adding a file is enough</strong>.</p>
+
+<h2>Add a concept</h2>
+<p>Create <code>docs/concepts/&lt;your-slug&gt;.md</code>, starting with a title and a one-line
+blockquote summary:</p>
+<pre><code># Your concept title
+
+&gt; One sentence shown as the card description and why it matters.
+
+...the rest of the explanation...</code></pre>
+<p>The <code>#</code> heading becomes the card <strong>title</strong>, the <code>&gt;</code>
+line becomes the card <strong>description</strong>. Open a PR — it appears under
+<strong>Concept deep-dives</strong>.</p>
+
+<h2>Add a visualization</h2>
+<p>Create <code>docs/visualizations/&lt;your-name&gt;.html</code> from the skeleton in the repo's
+<a href="https://github.com/aidarkazybekov/java-foundations/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>.
+Use the shared <code>var(--color-*)</code> variables so it works in light and dark mode. The
+<code>&lt;h1&gt;</code> becomes the card title, the <code>&lt;p class="lead"&gt;</code> the
+description. Open a PR — it appears under <strong>Interactive visualizations</strong>.</p>
+
+<h2>Contribute a kata (code)</h2>
+<ul>
+<li>Keep it <strong>from scratch</strong> and educational (no third-party libraries for the core).</li>
+<li>Add a focused JUnit suite — <code>mvn test</code> must stay green.</li>
+<li>Add a matching concept doc and, ideally, a visualization.</li>
+</ul>
+
+<h2>Local preview</h2>
+<pre><code>node docs/gen-manifest.mjs          # refresh content.json from your files
+python3 -m http.server -d docs 8000  # open http://localhost:8000</code></pre>
+
+<p style="margin-top:2rem">Full guide:
+<a href="https://github.com/aidarkazybekov/java-foundations/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>
+· Source: <a href="https://github.com/aidarkazybekov/java-foundations">GitHub</a></p>
+</article>
+
+<script src="theme.js"></script>
+</body>
+</html>

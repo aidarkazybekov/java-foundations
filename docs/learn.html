@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learn — CoreCraft</title>
+<script>(function(){try{var t=localStorage.getItem('jf-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('jf-lang')||((navigator.language||'en').slice(0,2)==='ru'?'ru':'en');document.documentElement.setAttribute('data-lang',l);}catch(e){}})();</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex; align-items:center; gap:1.6rem;">
+    <a class="brand" href="index.html"><span class="dot"></span>CoreCraft</a>
+    <nav class="topnav">
+      <a href="learn.html" data-i18n="navLearn">Learn</a>
+      <a href="play.html" data-i18n="navPlay">Play</a>
+      <a href="contribute.html" data-i18n="navContribute">Contribute</a>
+    </nav>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <button id="lang-toggle" class="theme-toggle" onclick="toggleLang()" aria-label="switch language" style="width:auto; padding:0 12px; font-size:13px; font-weight:600;">RU</button>
+    <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-label="toggle theme">☾</button>
+  </div>
+</div>
+
+<p class="kicker" data-i18n="kicker">Learn</p>
+<h1 data-i18n="title" style="font-size:32px;">Concept deep-dives</h1>
+<p class="lead" data-i18n="lead">How each piece works internally — buckets, heaps, locks, CAS, wait/notify, DI — with the interview angle for each.</p>
+
+<div class="grid" id="learn-grid"></div>
+
+<footer class="site-footer" style="grid-template-columns:1fr;">
+  <div class="footer-bottom" style="border-top:none; margin-top:0;">
+    <span>← <a href="index.html">CoreCraft</a></span>
+    <a href="https://github.com/aidarkazybekov/java-foundations">GitHub ↗</a>
+  </div>
+</footer>
+
+<script src="cards.js"></script>
+<script>
+window.I18N = {
+  en: { navLearn:"Learn", navPlay:"Play", navContribute:"Contribute",
+        kicker:"Learn", title:"Concept deep-dives",
+        lead:"How each piece works internally — buckets, heaps, locks, CAS, wait/notify, DI — with the interview angle for each." },
+  ru: { navLearn:"Изучить", navPlay:"Играть", navContribute:"Вклад",
+        kicker:"Изучить", title:"Разбор концептов",
+        lead:"Как каждая часть устроена изнутри — корзины, кучи, локи, CAS, wait/notify, DI — с углом для собеседования." }
+};
+function render(){
+  if(!window.__con) return;
+  var lang = jfLang();
+  document.getElementById('learn-grid').innerHTML = window.__con.map(function(c){ return jfCardHTML(c,'concept',lang); }).join('');
+}
+window.onLangChange = render;
+jfLoad(function(d){ window.__con = d.concepts; render(); });
+</script>
+<script src="theme.js"></script>
+<script src="lang.js"></script>
+</body>
+</html>
