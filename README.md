@@ -1,4 +1,9 @@
-# java-foundations
+# CoreCraft <sup><sub>(java-foundations)</sub></sup>
+
+[![CI](https://github.com/aidarkazybekov/java-foundations/actions/workflows/ci.yml/badge.svg)](https://github.com/aidarkazybekov/java-foundations/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Live site](https://img.shields.io/badge/live-CoreCraft-4f46e5)](https://aidarkazybekov.github.io/java-foundations/)
+![Java](https://img.shields.io/badge/Java-21-orange.svg)
 
 Core Java data structures and concurrency primitives **built from scratch**,
 test-driven. Not a library to use — a proof of understanding how the building

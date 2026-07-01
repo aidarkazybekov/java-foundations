@@ -1,0 +1,24 @@
+name: 🐞 Bug report
+description: Something is wrong (a kata, a test, a visualization, the site)
+title: "bug: <summary>"
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected vs what actually happened.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. …
+        2. …
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      placeholder: e.g. MyThreadPool, or docs/visualizations/min-heap.html

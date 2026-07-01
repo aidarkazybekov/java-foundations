@@ -1,0 +1,30 @@
+name: 📖 Propose a concept
+description: Suggest a new concept deep-dive (docs/concepts/*.md)
+title: "concept: <topic>"
+labels: ["concept", "good first issue"]
+body:
+  - type: input
+    id: topic
+    attributes:
+      label: Topic
+      placeholder: e.g. Binary search tree / TreeMap internals
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it matters
+      description: One or two sentences — the interview angle or the "aha".
+    validations:
+      required: true
+  - type: textarea
+    id: outline
+    attributes:
+      label: Rough outline
+      description: Key points you'd cover (bullets are fine).
+  - type: checkboxes
+    id: ack
+    attributes:
+      label: Contribution note
+      options:
+        - label: I've read CONTRIBUTING.md and understand the concept appears automatically once merged.

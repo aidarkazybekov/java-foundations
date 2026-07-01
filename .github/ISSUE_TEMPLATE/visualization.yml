@@ -1,0 +1,25 @@
+name: 🎮 Propose a visualization
+description: Suggest a new interactive visualization (docs/visualizations/*.html)
+title: "viz: <name>"
+labels: ["visualization", "good first issue"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: What to visualize
+      placeholder: e.g. Binary search tree insert/rotate
+    validations:
+      required: true
+  - type: textarea
+    id: interaction
+    attributes:
+      label: Interaction idea
+      description: What can the user click/step through? What does it teach?
+    validations:
+      required: true
+  - type: checkboxes
+    id: ack
+    attributes:
+      label: Contribution note
+      options:
+        - label: I've read CONTRIBUTING.md (use the shared style.css and var(--color-*) so it works in light/dark).

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  body {
+    width: 1280px; height: 640px; overflow: hidden; position: relative;
+    background: radial-gradient(1200px 500px at 78% -10%, #1e1b4b 0%, #0b1120 60%);
+    color: #f1f5f9; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .bar { position: absolute; top: 0; left: 0; right: 0; height: 8px;
+    background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899); }
+  .wrap { position: absolute; inset: 0; padding: 70px 72px; display: flex; align-items: center; gap: 44px; }
+  .left { width: 620px; }
+  .eyebrow { font-family: ui-monospace, Menlo, monospace; font-size: 20px; color: #a5b4fc; margin-bottom: 18px; letter-spacing: .01em; }
+  h1 { font-size: 92px; font-weight: 800; letter-spacing: -.03em; line-height: 1; margin-bottom: 22px; }
+  h1 .accent { background: linear-gradient(90deg,#818cf8,#c084fc); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .tag { font-size: 27px; line-height: 1.4; color: #cbd5e1; margin-bottom: 30px; }
+  .badges { display: flex; gap: 10px; flex-wrap: wrap; }
+  .b { font-family: ui-monospace, Menlo, monospace; font-size: 17px; padding: 8px 16px; border-radius: 999px;
+    border: 1px solid #334155; color: #94a3b8; }
+  .b.acc { background: #4f46e5; color: #fff; border-color: transparent; }
+  .code { flex: 1; background: #131a2a; border: 1px solid #24304a; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .tb { display: flex; align-items: center; gap: 8px; padding: 14px 18px; background: #1a2338; border-bottom: 1px solid #24304a; }
+  .tb .d { width: 13px; height: 13px; border-radius: 50%; }
+  .tb .fn { margin-left: 10px; font-family: ui-monospace, Menlo, monospace; font-size: 15px; color: #64748b; }
+  pre { margin: 0; padding: 22px 24px; font-family: ui-monospace, Menlo, monospace; font-size: 17px; line-height: 1.75; }
+  .kw { color: #e879f9; } .ty { color: #22d3ee; } .fn { color: #60a5fa; } .cm { color: #64748b; font-style: italic; }
+  .foot { position: absolute; left: 72px; bottom: 42px; font-family: ui-monospace, Menlo, monospace;
+    font-size: 18px; color: #64748b; }
+</style>
+</head>
+<body>
+  <div class="bar"></div>
+  <div class="wrap">
+    <div class="left">
+      <div class="eyebrow">// core Java, from first principles</div>
+      <h1><span class="accent">Core</span>Craft</h1>
+      <div class="tag">Data structures, concurrency &amp; a DI container — rebuilt by hand, test-driven.</div>
+      <div class="badges">
+        <span class="b acc">11 components</span>
+        <span class="b">104 tests green</span>
+        <span class="b">Java 21</span>
+        <span class="b">zero deps</span>
+      </div>
+    </div>
+    <div class="code">
+      <div class="tb"><span class="d" style="background:#ff5f56"></span><span class="d" style="background:#ffbd2e"></span><span class="d" style="background:#27c93f"></span><span class="fn">MyHashMap.java</span></div>
+<pre><span class="kw">public void</span> <span class="fn">put</span>(K key, V value) {
+  <span class="kw">int</span> i = <span class="fn">index</span>(key);
+  <span class="ty">Node</span>&lt;K,V&gt; cur = table[i];
+  <span class="kw">if</span> (cur == <span class="kw">null</span>) {      <span class="cm">// empty bucket</span>
+    table[i] = <span class="kw">new</span> <span class="ty">Node</span>&lt;&gt;(key, value);
+    <span class="kw">return</span>;
+  }
+  <span class="cm">// walk the chain…</span>
+}</pre>
+    </div>
+  </div>
+  <div class="foot">aidarkazybekov.github.io/java-foundations · by Aidar Kazybekov</div>
+</body>
+</html>
